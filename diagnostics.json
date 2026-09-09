@@ -11,5 +11,13 @@
     2
   ],
   "speculative_Q_enabled": false,
-  "speculative_Delta_enabled": false
+  "speculative_Delta_enabled": false,
+  "optimizer": "none in reference phase",
+  "learning_rate": null,
+  "tolerances": {
+    "state": 1e-10,
+    "geometry": 1e-05
+  },
+  "convergence_criteria": "reported per experiment; no global optimizer",
+  "intervention_family": "Pauli operations and finite I/X dynamical controls"
 }

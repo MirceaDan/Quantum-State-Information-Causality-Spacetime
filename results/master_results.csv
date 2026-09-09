@@ -1,0 +1,8 @@
+experiment_id,model_id,seed,metric,value
+EXP-Q-001,QM,1234,quantum_constraint_residual,2.220446049250313e-16
+EXP-C-001,DYNAMIC_CNOT,1234,direct_influence,1.0
+EXP-C-002,DYNAMIC_IDENTITY,1234,direct_influence,0.0
+EXP-G-001,MINKOWSKI,1234,einstein_residual_norm,0.0
+EXP-G-002,CONFORMAL,1234,bianchi_residual_norm,7.005125646220023e-13
+EXP-R-001,REVERSIBLE_UNITARY,1234,reverse_fidelity,1.0
+EXP-R-002,DEPOLARIZING,1234,reverse_fidelity,0.6250000000000001

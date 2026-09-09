@@ -41,6 +41,33 @@ class LorentzianEmbedding:
         difference = self.coordinates[first] - self.coordinates[second]
         return float(difference @ self.metric @ difference)
 
+    def causal_relation(self, source: int, target: int, tolerance: float = 1e-10) -> bool:
+        """Return whether target is in the future light cone of source."""
+        delta_t = self.coordinates[target, 0] - self.coordinates[source, 0]
+        return bool(delta_t > tolerance and self.separation_squared(source, target) <= tolerance)
+
+    def causal_matrix(self, tolerance: float = 1e-10) -> np.ndarray:
+        count = len(self.coordinates)
+        return np.array([[self.causal_relation(source, target, tolerance) for target in range(count)] for source in range(count)])
+
+    def compare_causal_relations(self, truth: np.ndarray, tolerance: float = 1e-10) -> dict[str, float | int]:
+        predicted = self.causal_matrix(tolerance)
+        truth = np.asarray(truth, dtype=bool)
+        if truth.shape != predicted.shape:
+            raise ValueError("truth relation matrix shape does not match embedding")
+        mask = ~np.eye(len(truth), dtype=bool)
+        true_positive = int(np.count_nonzero(predicted & truth & mask))
+        false_positive = int(np.count_nonzero(predicted & ~truth & mask))
+        false_negative = int(np.count_nonzero(~predicted & truth & mask))
+        precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 1.0
+        recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 1.0
+        return {
+            "precision": precision,
+            "recall": recall,
+            "false_positive_links": false_positive,
+            "false_negative_links": false_negative,
+        }
+
     def transform(self, matrix: np.ndarray) -> "LorentzianEmbedding":
         matrix = np.asarray(matrix, dtype=float)
         return LorentzianEmbedding(self.coordinates @ matrix.T, matrix @ self.metric @ matrix.T)

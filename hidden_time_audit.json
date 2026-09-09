@@ -1,0 +1,93 @@
+[
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\fixed_point.py",
+    "line": 25,
+    "variable": "max_iterations",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\fixed_point.py",
+    "line": 30,
+    "variable": "iteration",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\fixed_point.py",
+    "line": 35,
+    "variable": "iteration",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 153,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 177,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 162,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 163,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 178,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 166,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\history.py",
+    "line": 12,
+    "variable": "computational_index",
+    "role": "metadata_label",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\history.py",
+    "line": 14,
+    "variable": "external_time",
+    "role": "metadata_label",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\quantum.py",
+    "line": 71,
+    "variable": "computational_index",
+    "role": "metadata_label",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\quantum.py",
+    "line": 72,
+    "variable": "external_time",
+    "role": "metadata_label",
+    "allowed": true
+  }
+]

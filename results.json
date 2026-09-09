@@ -7,7 +7,7 @@
     "CONSERVATION_VALID": true,
     "QUANTUM_CONSTRAINTS_VALID": true,
     "STATE_RECONSTRUCTION_VALID": false,
-    "FIXED_POINT_VALID": false,
+    "FIXED_POINT_VALID": true,
     "SPECULATIVE_EXTENSION_REQUIRED": false
   },
   "strongest_result": "verified finite-dimensional quantum and relational-clock primitives",
@@ -61,7 +61,15 @@
       ]
     ],
     "approximation_scope": "finite sampled maximum; not the exact supremum",
-    "is_exact_supremum": false
+    "is_exact_supremum": false,
+    "dynamic_no_influence": 0.0,
+    "dynamic_direct_influence": 1.0
+  },
+  "relational_clock": {
+    "constraint_residual": 0.0,
+    "clock_distinguishability": 1.0,
+    "conditional_fidelity": 4.3899527748514656e-32,
+    "external_time_used": false
   },
   "geometry": {
     "signature": [
@@ -72,6 +80,27 @@
   },
   "gr": {
     "einstein_residual_norm": 0.0,
-    "discretization": "analytic flat metric reference"
+    "discretization": "analytic flat metric reference",
+    "curved_christoffel_norm": 0.6324555320336759,
+    "curved_riemann_norm": 0.1385640646055102,
+    "curved_einstein_norm": 0.1385640646055102,
+    "flat_bianchi_norm": 0.0,
+    "curved_bianchi_norm": 7.005125646220023e-13
+  },
+  "reconstruction": {
+    "reversible_reverse_fidelity": 1.0,
+    "reversible_round_trip_loss": 0.0,
+    "irreversible_reverse_fidelity": 0.6250000000000001,
+    "irreversible_round_trip_loss": 0.07585760735498001
+  },
+  "fixed_point": {
+    "classification": "FIXED_POINT",
+    "fixed_point_error": 8.231806349783991e-11,
+    "stability": "convergent",
+    "causal_loop_candidate": false
+  },
+  "hidden_time": {
+    "record_count": 13,
+    "forbidden_count": 0
   }
 }

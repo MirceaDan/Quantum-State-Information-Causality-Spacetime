@@ -34,6 +34,74 @@ class CausalInfluenceReport:
     is_exact_supremum: bool = False
 
 
+@dataclass(frozen=True)
+class DynamicalCausalProcess:
+    """A completely specified finite-dimensional state transformation."""
+
+    name: str
+    channel: callable
+    component_label: str = "MATHEMATICAL_DEFINITION"
+
+    def apply(self, rho: np.ndarray) -> np.ndarray:
+        output = np.asarray(self.channel(rho), dtype=complex)
+        if output.shape != rho.shape:
+            raise ValueError("process channel changed the Hilbert-space dimension")
+        return output
+
+
+@dataclass(frozen=True)
+class DynamicalCausalReport:
+    influence: float
+    mutual_information: float
+    measure: str = "trace_distance"
+    approximation_scope: str = "finite I/X intervention family"
+
+
+def identity_process() -> DynamicalCausalProcess:
+    return DynamicalCausalProcess("identity", lambda rho: rho.copy())
+
+
+def cnot_process() -> DynamicalCausalProcess:
+    cnot = np.array(
+        [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]],
+        dtype=complex,
+    )
+    return DynamicalCausalProcess("CNOT A->B", lambda rho: cnot @ rho @ cnot.conj().T)
+
+
+def _trace_distance(first: np.ndarray, second: np.ndarray) -> float:
+    difference = (first - second + (first - second).conj().T) / 2
+    return float(0.5 * np.sum(np.abs(np.linalg.eigvalsh(difference))))
+
+
+def sampled_dynamical_influence(
+    rho: np.ndarray,
+    dims: tuple[int, ...],
+    process: DynamicalCausalProcess,
+    source: int,
+    target: int,
+) -> DynamicalCausalReport:
+    """Estimate direct operational influence through a known dynamical process."""
+    if any(dim != 2 for dim in dims):
+        raise ValueError("the reference dynamical experiment uses qubits")
+    interventions = (
+        np.eye(2, dtype=complex),
+        np.array([[0, 1], [1, 0]], dtype=complex),
+    )
+    outputs = []
+    for operation in interventions:
+        factors = [np.eye(dim, dtype=complex) for dim in dims]
+        factors[source] = operation
+        full = factors[0]
+        for factor in factors[1:]:
+            full = np.kron(full, factor)
+        evolved = process.apply(full @ rho @ full.conj().T)
+        outputs.append(partial_trace(evolved, (target,), dims))
+    influence = _trace_distance(outputs[0], outputs[1])
+    system = QuantumSystem.from_density_matrix(rho, dims)
+    return DynamicalCausalReport(influence, system.mutual_information((source,), (target,)))
+
+
 def _apply_local_unitary(rho: np.ndarray, unitary: np.ndarray, subsystem: int, dims: tuple[int, ...]) -> np.ndarray:
     factors = [np.eye(dim, dtype=complex) for dim in dims]
     factors[subsystem] = unitary

@@ -72,6 +72,52 @@ class ConditionalState:
     external_time: float | None = None
 
 
+@dataclass(frozen=True)
+class ConstraintSolution:
+    status: str
+    kernel_dimension: int
+    state: np.ndarray | None
+    residual: float | None
+    eigenvalues: np.ndarray
+
+
+class HamiltonianConstraintSolver:
+    """Finite-dimensional solver for the physical-state constraint C|Psi> = 0."""
+
+    component_label = MATHEMATICAL_DEFINITION
+
+    def __init__(self, constraint: np.ndarray, tolerance: float = 1e-10) -> None:
+        operator = np.asarray(constraint, dtype=complex)
+        if operator.ndim != 2 or operator.shape[0] != operator.shape[1]:
+            raise ValueError("constraint must be a square matrix")
+        if not np.allclose(operator, operator.conj().T, atol=tolerance):
+            raise ValueError("the reference solver requires a Hermitian constraint")
+        self.constraint = (operator + operator.conj().T) / 2
+        self.tolerance = tolerance
+
+    def solve(self, preferred_state: np.ndarray | None = None) -> ConstraintSolution:
+        eigenvalues, eigenvectors = np.linalg.eigh(self.constraint)
+        kernel = np.flatnonzero(np.abs(eigenvalues) <= self.tolerance)
+        if len(kernel) == 0:
+            return ConstraintSolution("NO_PHYSICAL_STATE", 0, None, None, eigenvalues)
+
+        basis = eigenvectors[:, kernel]
+        if preferred_state is None:
+            state = basis[:, 0]
+        else:
+            vector = np.asarray(preferred_state, dtype=complex).reshape(-1)
+            if vector.shape[0] != self.constraint.shape[0]:
+                raise ValueError("preferred state dimension does not match constraint")
+            projection = basis @ (basis.conj().T @ vector)
+            if np.linalg.norm(projection) <= self.tolerance:
+                state = basis[:, 0]
+            else:
+                state = projection / np.linalg.norm(projection)
+        residual = float(np.linalg.norm(self.constraint @ state))
+        status = "EXACT_KERNEL" if residual <= self.tolerance else "APPROXIMATE_KERNEL"
+        return ConstraintSolution(status, len(kernel), state, residual, eigenvalues)
+
+
 @dataclass
 class QuantumSystem:
     rho: np.ndarray

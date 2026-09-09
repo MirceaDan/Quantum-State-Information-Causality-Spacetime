@@ -1,0 +1,51 @@
+[
+  {
+    "experiment_id": "EXP-Q-001",
+    "model_id": "QM",
+    "seed": 1234,
+    "metric": "quantum_constraint_residual",
+    "value": 2.220446049250313e-16
+  },
+  {
+    "experiment_id": "EXP-C-001",
+    "model_id": "DYNAMIC_CNOT",
+    "seed": 1234,
+    "metric": "direct_influence",
+    "value": 1.0
+  },
+  {
+    "experiment_id": "EXP-C-002",
+    "model_id": "DYNAMIC_IDENTITY",
+    "seed": 1234,
+    "metric": "direct_influence",
+    "value": 0.0
+  },
+  {
+    "experiment_id": "EXP-G-001",
+    "model_id": "MINKOWSKI",
+    "seed": 1234,
+    "metric": "einstein_residual_norm",
+    "value": 0.0
+  },
+  {
+    "experiment_id": "EXP-G-002",
+    "model_id": "CONFORMAL",
+    "seed": 1234,
+    "metric": "bianchi_residual_norm",
+    "value": 7.005125646220023e-13
+  },
+  {
+    "experiment_id": "EXP-R-001",
+    "model_id": "REVERSIBLE_UNITARY",
+    "seed": 1234,
+    "metric": "reverse_fidelity",
+    "value": 1.0
+  },
+  {
+    "experiment_id": "EXP-R-002",
+    "model_id": "DEPOLARIZING",
+    "seed": 1234,
+    "metric": "reverse_fidelity",
+    "value": 0.6250000000000001
+  }
+]
