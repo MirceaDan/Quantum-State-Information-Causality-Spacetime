@@ -1,0 +1,60 @@
+"""Finite intervention estimates of operational causal influence."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import numpy as np
+
+from .quantum import QuantumSystem, partial_trace
+
+NUMERICAL_APPROXIMATION = "NUMERICAL_APPROXIMATION"
+
+
+@dataclass(frozen=True)
+class PauliInterventionFamily:
+    name: str = "Pauli operations"
+    component_label: str = NUMERICAL_APPROXIMATION
+
+    @property
+    def unitaries(self) -> tuple[np.ndarray, ...]:
+        return (
+            np.eye(2, dtype=complex),
+            np.array([[0, 1], [1, 0]], dtype=complex),
+            np.array([[0, -1j], [1j, 0]], dtype=complex),
+            np.array([[1, 0], [0, -1]], dtype=complex),
+        )
+
+
+@dataclass(frozen=True)
+class CausalInfluenceReport:
+    matrix: np.ndarray
+    intervention_family: str
+    number_of_interventions: int
+    approximation_scope: str
+    is_exact_supremum: bool = False
+
+
+def _apply_local_unitary(rho: np.ndarray, unitary: np.ndarray, subsystem: int, dims: tuple[int, ...]) -> np.ndarray:
+    factors = [np.eye(dim, dtype=complex) for dim in dims]
+    factors[subsystem] = unitary
+    full = factors[0]
+    for factor in factors[1:]:
+        full = np.kron(full, factor)
+    return full @ rho @ full.conj().T
+
+
+def sampled_causal_influence(system: QuantumSystem, family: PauliInterventionFamily) -> CausalInfluenceReport:
+    """Estimate C_ij over a finite intervention family, never an exact supremum."""
+    count = len(system.subsystem_dims)
+    matrix = np.zeros((count, count), dtype=float)
+    for source in range(count):
+        for target in range(count):
+            target_dims = tuple(index for index in range(count) if index == target)
+            baseline = system.reduced_state(target_dims)
+            observed = []
+            for unitary in family.unitaries:
+                state = _apply_local_unitary(system.rho, unitary, source, system.subsystem_dims)
+                observed.append(QuantumSystem.relative_entropy(partial_trace(state, target_dims, system.subsystem_dims), baseline))
+            finite_values = [value for value in observed if np.isfinite(value)]
+            matrix[source, target] = max(finite_values, default=0.0)
+    return CausalInfluenceReport(matrix, family.name, len(family.unitaries), "finite sampled maximum; not the exact supremum")

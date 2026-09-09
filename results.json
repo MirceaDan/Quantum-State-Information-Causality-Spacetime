@@ -1,0 +1,77 @@
+{
+  "classification": {
+    "BASELINE_VALID": true,
+    "RELATIONAL_TIME_VALID": true,
+    "INFORMATION_GEOMETRY_VALID": false,
+    "CAUSAL_CONSISTENCY_VALID": true,
+    "CONSERVATION_VALID": true,
+    "QUANTUM_CONSTRAINTS_VALID": true,
+    "STATE_RECONSTRUCTION_VALID": false,
+    "FIXED_POINT_VALID": false,
+    "SPECULATIVE_EXTENSION_REQUIRED": false
+  },
+  "strongest_result": "verified finite-dimensional quantum and relational-clock primitives",
+  "weakest_constraint": "information-to-geometry is an exploratory ansatz and is not validated here",
+  "dominant_numerical_error": 2.220446049250313e-16,
+  "likely_artifact": "finite intervention sampling and finite-dimensional toy Hilbert space",
+  "next_experiment": "add held-out synthetic histories and baseline-first geometry fitting",
+  "quantum": {
+    "trace_error": 2.220446049250313e-16,
+    "hermiticity_error": 0.0,
+    "minimum_eigenvalue": 0.0,
+    "positivity_violation": 0.0
+  },
+  "information": {
+    "mutual_information_matrix": [
+      [
+        0.0,
+        0.6931471805599454,
+        0.6931471805599454
+      ],
+      [
+        0.6931471805599454,
+        0.0,
+        0.6931471805599454
+      ],
+      [
+        0.6931471805599454,
+        0.6931471805599454,
+        0.0
+      ]
+    ]
+  },
+  "causality": {
+    "intervention_family": "Pauli operations",
+    "number_of_interventions": 4,
+    "causal_influence_matrix": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "approximation_scope": "finite sampled maximum; not the exact supremum",
+    "is_exact_supremum": false
+  },
+  "geometry": {
+    "signature": [
+      -1,
+      3
+    ],
+    "non_degenerate": true
+  },
+  "gr": {
+    "einstein_residual_norm": 0.0,
+    "discretization": "analytic flat metric reference"
+  }
+}

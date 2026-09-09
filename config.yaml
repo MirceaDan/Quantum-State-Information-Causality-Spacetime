@@ -1,0 +1,16 @@
+seed: 1234
+units: "dimensionless reference units"
+scaling: "all toy-model operators are nondimensionalized"
+hilbert_space:
+  matter: 2
+  clock: 2
+  observer: 2
+interventions:
+  family: "Pauli operations"
+  finite_sample: true
+numerics:
+  tolerance: 1.0e-10
+  optimizer: "not enabled in phase 1"
+model:
+  speculative_Q_enabled: false
+  speculative_Delta_enabled: false
