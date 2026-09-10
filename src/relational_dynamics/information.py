@@ -31,6 +31,28 @@ class InformationCausalityEngine:
                 matrix[first, second] = matrix[second, first] = self.mutual_information(first, second)
         return matrix
 
+    def multivariate_mutual_information(self, first: int, second: int, third: int) -> float:
+        """Co-information I(A:B:C) = S(A)+S(B)+S(C)-S(AB)-S(AC)-S(BC)+S(ABC).
+
+        This is a signed quantity (interaction information); it is not itself a metric
+        and pairwise mutual information is not assumed sufficient on its own.
+        """
+        s_a, s_b, s_c = self.system.entropy((first,)), self.system.entropy((second,)), self.system.entropy((third,))
+        s_ab = self.system.entropy((first, second))
+        s_ac = self.system.entropy((first, third))
+        s_bc = self.system.entropy((second, third))
+        s_abc = self.system.entropy((first, second, third))
+        return float(s_a + s_b + s_c - s_ab - s_ac - s_bc + s_abc)
+
+    def multipartite_information_triples(self) -> dict[tuple[int, int, int], float]:
+        count = len(self.system.subsystem_dims)
+        triples: dict[tuple[int, int, int], float] = {}
+        for first in range(count):
+            for second in range(first + 1, count):
+                for third in range(second + 1, count):
+                    triples[(first, second, third)] = self.multivariate_mutual_information(first, second, third)
+        return triples
+
     def information_distance(self, first: int, second: int, i_max: float) -> float:
         """PDF eqs. (21)-(22), retained as a configurable modeling ansatz."""
         mutual_information = self.mutual_information(first, second)

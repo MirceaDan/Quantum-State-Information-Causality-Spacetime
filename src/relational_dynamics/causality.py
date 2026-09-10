@@ -126,3 +126,33 @@ def sampled_causal_influence(system: QuantumSystem, family: PauliInterventionFam
             finite_values = [value for value in observed if np.isfinite(value)]
             matrix[source, target] = max(finite_values, default=0.0)
     return CausalInfluenceReport(matrix, family.name, len(family.unitaries), "finite sampled maximum; not the exact supremum")
+
+
+@dataclass(frozen=True)
+class InterventionResponseTensorReport:
+    """The full finite intervention-response tensor C_{i,j,a}, eq. (10) of the spec.
+
+    Unlike ``sampled_causal_influence``, no max is taken over interventions: every
+    (source, target, intervention) trace-distance response is retained.
+    """
+
+    tensor: np.ndarray
+    intervention_family: str
+    number_of_interventions: int
+    approximation_scope: str = "finite sampled trace-distance response; not the exact operational supremum"
+
+
+def intervention_response_tensor(system: QuantumSystem, family: PauliInterventionFamily) -> InterventionResponseTensorReport:
+    """Compute C_{i,j,a} = D_tr(rho_j^(a), rho_j^(0)) for every source i, target j, intervention a."""
+    count = len(system.subsystem_dims)
+    unitaries = family.unitaries
+    tensor = np.zeros((count, count, len(unitaries)), dtype=float)
+    baselines = [system.reduced_state((target,)) for target in range(count)]
+    for source in range(count):
+        for intervention_index, unitary in enumerate(unitaries):
+            state = _apply_local_unitary(system.rho, unitary, source, system.subsystem_dims)
+            for target in range(count):
+                response = partial_trace(state, (target,), system.subsystem_dims)
+                tensor[source, target, intervention_index] = _trace_distance(response, baselines[target])
+    return InterventionResponseTensorReport(tensor, family.name, len(unitaries))
+

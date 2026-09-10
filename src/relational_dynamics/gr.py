@@ -151,7 +151,7 @@ def conformal_geometry(scale: float = 0.2) -> DifferentialGeometry:
 
 
 def spatial_conformal_geometry(scale: float = 0.15) -> DifferentialGeometry:
-    """Analytic conformal metric with a spatially varying conformal factor."""
+    """A second analytic curved reference metric, conformal in a spatial direction rather than time."""
     eta = minkowski_metric(4)
 
     def metric(point: np.ndarray) -> np.ndarray:
@@ -199,16 +199,19 @@ def bianchi_residual(geometry: DifferentialGeometry, point: np.ndarray, step: fl
 
 
 @dataclass(frozen=True)
-class ConvergenceReport:
+class BianchiConvergenceReport:
     steps: tuple[float, ...]
     residuals: tuple[float, ...]
     observed_order: float
+    component_label: str = NUMERICAL_APPROXIMATION
 
 
-def bianchi_convergence(geometry: DifferentialGeometry, point: np.ndarray, steps: tuple[float, ...]) -> ConvergenceReport:
+def bianchi_convergence(geometry: DifferentialGeometry, point: np.ndarray, steps: tuple[float, ...] = (1e-3, 5e-4, 2.5e-4)) -> BianchiConvergenceReport:
+    """Report the Bianchi residual at several finite-difference step sizes and the observed convergence order."""
     residuals = tuple(float(np.linalg.norm(bianchi_residual(geometry, point, step))) for step in steps)
-    if len(steps) < 2 or residuals[-1] == 0.0 or residuals[0] == 0.0:
-        order = 0.0
-    else:
-        order = float(np.log(residuals[0] / residuals[-1]) / np.log(steps[0] / steps[-1]))
-    return ConvergenceReport(steps, residuals, order)
+    orders = []
+    for first, second, step_first, step_second in zip(residuals, residuals[1:], steps, steps[1:]):
+        if first > 0.0 and second > 0.0:
+            orders.append(float(np.log(first / second) / np.log(step_first / step_second)))
+    observed_order = float(np.mean(orders)) if orders else 0.0
+    return BianchiConvergenceReport(tuple(steps), residuals, observed_order)
