@@ -12,6 +12,8 @@
   ],
   "speculative_Q_enabled": false,
   "speculative_Delta_enabled": false,
+  "Q": 0,
+  "Delta_munu": 0,
   "optimizer": "none in reference phase",
   "learning_rate": null,
   "tolerances": {

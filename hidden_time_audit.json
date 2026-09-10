@@ -22,42 +22,56 @@
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 153,
+    "line": 173,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 177,
+    "line": 197,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 162,
+    "line": 182,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 163,
+    "line": 183,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 178,
+    "line": 198,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
   },
   {
     "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
-    "line": 166,
+    "line": 186,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 209,
+    "variable": "step",
+    "role": "numerical_control",
+    "allowed": true
+  },
+  {
+    "file": "C:\\Projects\\Quantum-State-Information-Causality-Spacetime\\src\\relational_dynamics\\gr.py",
+    "line": 209,
     "variable": "step",
     "role": "numerical_control",
     "allowed": true
