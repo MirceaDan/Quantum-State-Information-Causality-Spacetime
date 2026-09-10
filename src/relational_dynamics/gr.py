@@ -150,6 +150,26 @@ def conformal_geometry(scale: float = 0.2) -> DifferentialGeometry:
     return DifferentialGeometry(metric, first, second)
 
 
+def spatial_conformal_geometry(scale: float = 0.15) -> DifferentialGeometry:
+    """Analytic conformal metric with a spatially varying conformal factor."""
+    eta = minkowski_metric(4)
+
+    def metric(point: np.ndarray) -> np.ndarray:
+        return np.exp(2 * scale * point[1]) * eta
+
+    def first(point: np.ndarray) -> np.ndarray:
+        result = np.zeros((4, 4, 4), dtype=float)
+        result[1] = 2 * scale * metric(point)
+        return result
+
+    def second(point: np.ndarray) -> np.ndarray:
+        result = np.zeros((4, 4, 4, 4), dtype=float)
+        result[1, 1] = 4 * scale**2 * metric(point)
+        return result
+
+    return DifferentialGeometry(metric, first, second)
+
+
 def covariant_divergence(geometry: DifferentialGeometry, tensor_fn: callable, point: np.ndarray, step: float = 1e-5) -> np.ndarray:
     """Compute nabla_mu T^mu_nu with connection terms for a lower tensor T."""
     point = np.asarray(point, dtype=float)
@@ -176,3 +196,19 @@ def covariant_divergence(geometry: DifferentialGeometry, tensor_fn: callable, po
 
 def bianchi_residual(geometry: DifferentialGeometry, point: np.ndarray, step: float = 1e-5) -> np.ndarray:
     return covariant_divergence(geometry, lambda x: geometry.curvature_tensors(x).einstein, point, step)
+
+
+@dataclass(frozen=True)
+class ConvergenceReport:
+    steps: tuple[float, ...]
+    residuals: tuple[float, ...]
+    observed_order: float
+
+
+def bianchi_convergence(geometry: DifferentialGeometry, point: np.ndarray, steps: tuple[float, ...]) -> ConvergenceReport:
+    residuals = tuple(float(np.linalg.norm(bianchi_residual(geometry, point, step))) for step in steps)
+    if len(steps) < 2 or residuals[-1] == 0.0 or residuals[0] == 0.0:
+        order = 0.0
+    else:
+        order = float(np.log(residuals[0] / residuals[-1]) / np.log(steps[0] / steps[-1]))
+    return ConvergenceReport(steps, residuals, order)

@@ -59,13 +59,18 @@ class LorentzianEmbedding:
         true_positive = int(np.count_nonzero(predicted & truth & mask))
         false_positive = int(np.count_nonzero(predicted & ~truth & mask))
         false_negative = int(np.count_nonzero(~predicted & truth & mask))
+        true_negative = int(np.count_nonzero(~predicted & ~truth & mask))
         precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 1.0
         recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 1.0
+        f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
         return {
             "precision": precision,
             "recall": recall,
+            "f1": f1,
             "false_positive_links": false_positive,
             "false_negative_links": false_negative,
+            "false_positive_rate": false_positive / (false_positive + true_negative) if false_positive + true_negative else 0.0,
+            "false_negative_rate": false_negative / (false_negative + true_positive) if false_negative + true_positive else 0.0,
         }
 
     def transform(self, matrix: np.ndarray) -> "LorentzianEmbedding":
@@ -77,3 +82,16 @@ def minkowski_metric(dimension: int = 4) -> np.ndarray:
     metric = np.eye(dimension, dtype=float)
     metric[0, 0] = -1.0
     return metric
+
+
+def lorentz_boost(beta: float, spatial_axis: int = 1) -> np.ndarray:
+    """Return a proper boost in one time/spatial coordinate plane."""
+    if abs(beta) >= 1.0:
+        raise ValueError("boost velocity must satisfy |beta| < 1")
+    matrix = np.eye(4, dtype=float)
+    gamma = 1.0 / np.sqrt(1.0 - beta**2)
+    matrix[0, 0] = gamma
+    matrix[spatial_axis, spatial_axis] = gamma
+    matrix[0, spatial_axis] = -gamma * beta
+    matrix[spatial_axis, 0] = -gamma * beta
+    return matrix
