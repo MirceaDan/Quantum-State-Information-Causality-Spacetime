@@ -1,0 +1,1322 @@
+{
+  "gate": {
+    "train_test_leakage": "PASS",
+    "causal_leakage": "PASS",
+    "order_confound": "FAIL",
+    "label_confound": "FAIL",
+    "geometry_leakage": "PASS",
+    "identifiability_status": "WORLD_1-WORLD_2:OBSERVABLY_DISTINCT; WORLD_1-WORLD_3:OBSERVABLY_DISTINCT; WORLD_2-WORLD_3:OBSERVABLY_DISTINCT",
+    "scaling_study_present": "PASS",
+    "intervention_robustness_present": "PASS"
+  },
+  "classification": "EXPERIMENTAL_CONFOUND_PRESENT",
+  "q_norm": 0.0,
+  "delta_norm": 0.0,
+  "claims_new_physics": false,
+  "claims_time_travel": false,
+  "control_matrix": {
+    "COUPLED": {
+      "experiment_id": "EXP-HIST-COUPLED-001",
+      "geometry_hidden": true,
+      "observable_source": "fixed_order_control_process[WORLD_2]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 16.529328763224402,
+          "validation_loss": 8.947071242950484,
+          "test_loss": 2.9901090198167233,
+          "causal_precision": 1.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 0.021542946175005042,
+          "validation_loss": 6.322421605805894,
+          "test_loss": 0.5940592056298866,
+          "causal_precision": 0.4,
+          "causal_recall": 0.6666666666666666,
+          "causal_f1": 0.5,
+          "coordinate_relative_error": 2.6073147832585977,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 1.327436513947625e-09,
+          "validation_loss": 3.1748185616074878,
+          "test_loss": 66.64590605289737,
+          "causal_precision": 0.3333333333333333,
+          "causal_recall": 0.3333333333333333,
+          "causal_f1": 0.3333333333333333,
+          "coordinate_relative_error": 18.18086244671119,
+          "curvature_invariant_error": 0.11375463050378527,
+          "fitted_scale": 0.11240018605625977,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 5.412710169877308,
+          "std": 8.106596021766386,
+          "median": 2.9901090198167233,
+          "minimum": 0.10233765017471282,
+          "maximum": 28.87865146938666,
+          "per_seed": [
+            2.9901090198167233,
+            0.3888772969251871,
+            2.9901090198167233,
+            0.28653964675147425,
+            4.760075268226216,
+            0.10233765017471282,
+            7.463644641291465,
+            3.2766486665671977,
+            28.87865146938666,
+            2.9901090198167233
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 6.25154130208505,
+          "std": 5.934326882266196,
+          "median": 4.414738230915231,
+          "minimum": 0.05534781133612579,
+          "maximum": 17.417627768164415,
+          "per_seed": [
+            0.5940592056298866,
+            0.05534781133612579,
+            2.177391117433904,
+            7.58275454755631,
+            9.145491670425393,
+            15.757073712977974,
+            6.025886685735231,
+            2.80358977609523,
+            17.417627768164415,
+            0.9561907254960221
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 15.526380712720123,
+          "std": 17.901986093222103,
+          "median": 11.281580671454467,
+          "minimum": 0.018073770630170478,
+          "maximum": 66.64590605289737,
+          "per_seed": [
+            66.64590605289737,
+            0.018073770630170478,
+            1.4817160975295114,
+            13.849040911752603,
+            9.406472121558817,
+            13.156689221350117,
+            9.406466695834146,
+            7.8707572371191175,
+            14.5838039763828,
+            18.8448810421466
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    },
+    "ZERO_COUPLING": {
+      "experiment_id": "EXP-HIST-ZEROCOUPLING-001",
+      "geometry_hidden": true,
+      "observable_source": "zero_coupling_process[WORLD_2]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 0.4804516276248402,
+          "validation_loss": 0.4804516276248402,
+          "test_loss": 0.4804516276248402,
+          "causal_precision": 1.0,
+          "causal_recall": 1.0,
+          "causal_f1": 1.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 4.143757101958387e-17,
+          "validation_loss": 0.04728040548520308,
+          "test_loss": 0.14175276344143087,
+          "causal_precision": 0.0,
+          "causal_recall": 1.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.19473397995636,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 3.980782887254357e-21,
+          "validation_loss": 0.09537111201957134,
+          "test_loss": 0.07973492199368641,
+          "causal_precision": 1.0,
+          "causal_recall": 1.0,
+          "causal_f1": 1.0,
+          "coordinate_relative_error": 1.1342083073315257,
+          "curvature_invariant_error": 0.17779637296313605,
+          "fitted_scale": -2.817375246640278e-07,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 0.4804516276248402,
+          "std": 0.0,
+          "median": 0.4804516276248402,
+          "minimum": 0.4804516276248402,
+          "maximum": 0.4804516276248402,
+          "per_seed": [
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402,
+            0.4804516276248402
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 0.40491211731376564,
+          "std": 0.8516463708887747,
+          "median": 0.14534128495440943,
+          "minimum": 0.027950964041655986,
+          "maximum": 2.950158094669153,
+          "per_seed": [
+            0.14175276344143087,
+            0.027950964041655986,
+            0.1730195031282698,
+            0.24143377788905002,
+            0.148929806467388,
+            0.03590398914514361,
+            0.22618194970586675,
+            0.05015437203992225,
+            2.950158094669153,
+            0.053635952609775835
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 0.6495134739350158,
+          "std": 0.982776528541143,
+          "median": 0.12357404414146997,
+          "minimum": 0.024327932201345555,
+          "maximum": 3.0038352528793277,
+          "per_seed": [
+            0.07973492199368641,
+            2.032896062389201,
+            0.15272474275555972,
+            0.07222088291650579,
+            0.027755671402633113,
+            0.2128644037702756,
+            0.7943515235142424,
+            0.09442334552738023,
+            3.0038352528793277,
+            0.024327932201345555
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    },
+    "SHUFFLED_GEOMETRY": {
+      "experiment_id": "EXP-HIST-SHUFFLEDGEOM-001",
+      "geometry_hidden": true,
+      "observable_source": "shuffled_geometry_process[WORLD_2]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 15.011103305612833,
+          "validation_loss": 4.700404412229719,
+          "test_loss": 2.2889878629927387,
+          "causal_precision": 1.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 0.0007206280204458135,
+          "validation_loss": 8.290299598747847,
+          "test_loss": 1.6404571777408272,
+          "causal_precision": 0.4,
+          "causal_recall": 0.6666666666666666,
+          "causal_f1": 0.5,
+          "coordinate_relative_error": 2.5627628657055097,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 5.7089125875811334e-08,
+          "validation_loss": 7.960042552634049,
+          "test_loss": 1.5895247902367606,
+          "causal_precision": 0.5,
+          "causal_recall": 1.0,
+          "causal_f1": 0.6666666666666666,
+          "coordinate_relative_error": 1.4056036290017928,
+          "curvature_invariant_error": 0.2133881894434456,
+          "fitted_scale": 0.3260821118021608,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 4.1067262585332625,
+          "std": 7.031480244052972,
+          "median": 2.2889878629927387,
+          "minimum": 0.0416435274358915,
+          "maximum": 24.811795470930004,
+          "per_seed": [
+            2.2889878629927387,
+            0.0550616936041032,
+            2.2889878629927387,
+            0.0416435274358915,
+            2.3502022061153593,
+            0.0967052210389947,
+            4.597546541672207,
+            2.2473443355578473,
+            24.811795470930004,
+            2.2889878629927387
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 6.844188379438998,
+          "std": 5.489526532390254,
+          "median": 6.368565475035091,
+          "minimum": 0.49878699695545137,
+          "maximum": 16.83368177134313,
+          "per_seed": [
+            1.6404571777408272,
+            0.49878699695545137,
+            1.912091855842938,
+            10.265466164639397,
+            10.274938682756314,
+            16.83368177134313,
+            5.181433730171896,
+            7.555697219898285,
+            13.580539411853684,
+            0.6987907831880599
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 5.9229660540512805,
+          "std": 4.561605188843109,
+          "median": 5.781651402111322,
+          "minimum": 0.0754941616731414,
+          "maximum": 12.929775672538826,
+          "per_seed": [
+            1.5895247902367606,
+            0.0754941616731414,
+            2.2652535825504394,
+            5.331596591051789,
+            10.28330941730971,
+            12.929775672538826,
+            7.816949445684843,
+            6.231706213170855,
+            12.236129492001217,
+            0.4699211742952244
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    },
+    "RANDOMIZED_ORDER": {
+      "experiment_id": "EXP-HIST-RANDORDER-001",
+      "geometry_hidden": true,
+      "observable_source": "randomized_order_process[WORLD_2]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 236.09502709150092,
+          "validation_loss": 9.647580651312353,
+          "test_loss": 3.2311740733800143,
+          "causal_precision": 1.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 0.024948694450401817,
+          "validation_loss": 551.8417623987107,
+          "test_loss": 0.41141893594403933,
+          "causal_precision": 0.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 11.534068616174562,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 7.068794804150137e-08,
+          "validation_loss": 5.93140396313274,
+          "test_loss": 626.9809705581415,
+          "causal_precision": 0.25,
+          "causal_recall": 0.5,
+          "causal_f1": 0.3333333333333333,
+          "coordinate_relative_error": 5.660097460193453,
+          "curvature_invariant_error": 0.015589854993279112,
+          "fitted_scale": 0.18953734502306094,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 38.579627900140466,
+          "std": 106.68565061624739,
+          "median": 3.2311740733800143,
+          "minimum": 0.09311935436336898,
+          "maximum": 358.5620857199041,
+          "per_seed": [
+            3.2311740733800143,
+            0.4042452430034674,
+            3.2311740733800143,
+            0.31112588864109847,
+            5.134916214296775,
+            0.09311935436336898,
+            8.05496439903569,
+            3.5422999620201128,
+            358.5620857199041,
+            3.2311740733800143
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 178.15489121554813,
+          "std": 163.05828746485633,
+          "median": 180.89131078040865,
+          "minimum": 0.41141893594403933,
+          "maximum": 497.3305216725273,
+          "per_seed": [
+            0.41141893594403933,
+            1.3275386315229862,
+            38.369606845543096,
+            88.24737321936267,
+            276.9929385722035,
+            497.3305216725273,
+            273.53524834145463,
+            286.1859696164678,
+            304.99672532313025,
+            14.15157099732505
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 195.7732375041319,
+          "std": 191.79379374360047,
+          "median": 210.77231858401618,
+          "minimum": 4.289266660022145,
+          "maximum": 626.9809705581415,
+          "per_seed": [
+            626.9809705581415,
+            6.422174389886176,
+            6.193108545109426,
+            9.420877525193497,
+            277.4828851698013,
+            285.2045023462787,
+            290.85838280315784,
+            144.06175199823105,
+            306.81845504549767,
+            4.289266660022145
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    },
+    "RANDOMIZED_OBSERVABLE": {
+      "experiment_id": "EXP-HIST-RANDOM-001",
+      "geometry_hidden": true,
+      "observable_source": "randomized_pairwise_permutation[WORLD_2]",
+      "coupling_mechanism": "none_pairwise_permutation_control",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 5.043988194310452,
+          "validation_loss": 1e-12,
+          "test_loss": 24.691655494662392,
+          "causal_precision": 1.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 1.323284013759298,
+          "validation_loss": 2.018422720787555,
+          "test_loss": 16.146914632605068,
+          "causal_precision": 0.3333333333333333,
+          "causal_recall": 0.3333333333333333,
+          "causal_f1": 0.3333333333333333,
+          "coordinate_relative_error": 1.4382668526294946,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 5.5850053120833215e-08,
+          "validation_loss": 37.18409837937077,
+          "test_loss": 8838.195311871952,
+          "causal_precision": 0.2,
+          "causal_recall": 0.3333333333333333,
+          "causal_f1": 0.25,
+          "coordinate_relative_error": 11.965249073340555,
+          "curvature_invariant_error": 0.6065170685943331,
+          "fitted_scale": -0.29072039845212655,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 12.185344614997229,
+          "std": 11.719719760750174,
+          "median": 4.667974269937835,
+          "minimum": 0.3888772969251871,
+          "maximum": 28.87865146938666,
+          "per_seed": [
+            24.691655494662392,
+            3.2766486665671977,
+            0.3888772969251871,
+            27.39522486772764,
+            4.575873271649455,
+            2.9901090198167233,
+            4.760075268226216,
+            28.87865146938666,
+            24.50745349808563,
+            0.3888772969251871
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 12.203621134108719,
+          "std": 7.012700535436002,
+          "median": 13.690891613238712,
+          "minimum": 2.1652669749454065,
+          "maximum": 21.52291422947212,
+          "per_seed": [
+            16.146914632605068,
+            2.7784611352658755,
+            7.981741621057309,
+            21.52291422947212,
+            16.363111026548204,
+            18.398348686472307,
+            2.1652669749454065,
+            20.621719802346835,
+            11.234868593872354,
+            4.822864638501717
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 977.4087819488954,
+          "std": 2630.348984949542,
+          "median": 16.78159317602079,
+          "minimum": 2.2299849293781953,
+          "maximum": 8838.195311871952,
+          "per_seed": [
+            8838.195311871952,
+            2.2299849293781953,
+            5.76434299345736,
+            12.928628388000222,
+            56.175798342394245,
+            788.6210601567097,
+            32.53168099444671,
+            20.634557964041363,
+            12.229754782800569,
+            4.776699065775466
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    }
+  },
+  "observable_ablation": {
+    "MI_ONLY": {
+      "model_id": "FLEXIBLE",
+      "observable_mode": "MI_ONLY",
+      "parameter_count": 17,
+      "train_loss": 8.056361885700627e-09,
+      "validation_loss": 0.02465621516386664,
+      "test_loss": 7.055972933457549,
+      "causal_precision": 0.5,
+      "causal_recall": 1.0,
+      "causal_f1": 0.6666666666666666,
+      "coordinate_relative_error": 1.2335004961655822,
+      "curvature_invariant_error": 0.1770102439995125,
+      "fitted_scale": 0.011546013236237012,
+      "mapping_is_physical_law": false
+    },
+    "CAUSAL_ONLY": {
+      "model_id": "FLEXIBLE",
+      "observable_mode": "CAUSAL_ONLY",
+      "parameter_count": 17,
+      "train_loss": 0.8100240885820732,
+      "validation_loss": 0.19413757641416768,
+      "test_loss": 8.327965136226421,
+      "causal_precision": 0.5,
+      "causal_recall": 1.0,
+      "causal_f1": 0.6666666666666666,
+      "coordinate_relative_error": 1.1246378730798174,
+      "curvature_invariant_error": 0.1777963729636123,
+      "fitted_scale": 0.0,
+      "mapping_is_physical_law": false
+    },
+    "MI_PLUS_CAUSAL": {
+      "model_id": "FLEXIBLE",
+      "observable_mode": "MI_PLUS_CAUSAL",
+      "parameter_count": 17,
+      "train_loss": 6.888143549179242e-09,
+      "validation_loss": 0.07284965733973217,
+      "test_loss": 7.88712552405075,
+      "causal_precision": 0.5,
+      "causal_recall": 1.0,
+      "causal_f1": 0.6666666666666666,
+      "coordinate_relative_error": 1.283757837215196,
+      "curvature_invariant_error": 0.1640938135931348,
+      "fitted_scale": -0.046162480594546654,
+      "mapping_is_physical_law": false
+    },
+    "MULTIPARTITE_ONLY": {
+      "model_id": "FLEXIBLE",
+      "observable_mode": "MULTIPARTITE_ONLY",
+      "parameter_count": 17,
+      "train_loss": 0.8100240885820732,
+      "validation_loss": 0.19413757641416768,
+      "test_loss": 8.327965136226421,
+      "causal_precision": 0.5,
+      "causal_recall": 1.0,
+      "causal_f1": 0.6666666666666666,
+      "coordinate_relative_error": 1.1246378730798174,
+      "curvature_invariant_error": 0.1777963729636123,
+      "fitted_scale": 0.0,
+      "mapping_is_physical_law": false
+    },
+    "ALL_OBSERVABLES": {
+      "model_id": "FLEXIBLE",
+      "observable_mode": "ALL_OBSERVABLES",
+      "parameter_count": 17,
+      "train_loss": 6.888143549179242e-09,
+      "validation_loss": 0.07284965733973217,
+      "test_loss": 7.88712552405075,
+      "causal_precision": 0.5,
+      "causal_recall": 1.0,
+      "causal_f1": 0.6666666666666666,
+      "coordinate_relative_error": 1.283757837215196,
+      "curvature_invariant_error": 0.1640938135931348,
+      "fitted_scale": -0.046162480594546654,
+      "mapping_is_physical_law": false
+    }
+  },
+  "identifiability": [
+    {
+      "world_a": "WORLD_1",
+      "world_b": "WORLD_2",
+      "observable_distance": 0.2750227647073325,
+      "classification": "OBSERVABLY_DISTINCT",
+      "tolerance": 1e-06,
+      "stronger_test_available": false,
+      "note": "This compares flattened observable vectors only (OBSERVABLY_DISTINCT / OBSERVABLY_INDISTINGUISHABLE). It does NOT establish inverse-problem IDENTIFIABLE/NON_IDENTIFIABLE in the stronger sense of section 4: a rigorous search over reconstruction-model parameterizations for a geometrically-inequivalent world producing equivalent observables is not implemented in the current framework."
+    },
+    {
+      "world_a": "WORLD_1",
+      "world_b": "WORLD_3",
+      "observable_distance": 0.25403425638358806,
+      "classification": "OBSERVABLY_DISTINCT",
+      "tolerance": 1e-06,
+      "stronger_test_available": false,
+      "note": "This compares flattened observable vectors only (OBSERVABLY_DISTINCT / OBSERVABLY_INDISTINGUISHABLE). It does NOT establish inverse-problem IDENTIFIABLE/NON_IDENTIFIABLE in the stronger sense of section 4: a rigorous search over reconstruction-model parameterizations for a geometrically-inequivalent world producing equivalent observables is not implemented in the current framework."
+    },
+    {
+      "world_a": "WORLD_2",
+      "world_b": "WORLD_3",
+      "observable_distance": 0.16809613931713413,
+      "classification": "OBSERVABLY_DISTINCT",
+      "tolerance": 1e-06,
+      "stronger_test_available": false,
+      "note": "This compares flattened observable vectors only (OBSERVABLY_DISTINCT / OBSERVABLY_INDISTINGUISHABLE). It does NOT establish inverse-problem IDENTIFIABLE/NON_IDENTIFIABLE in the stronger sense of section 4: a rigorous search over reconstruction-model parameterizations for a geometrically-inequivalent world producing equivalent observables is not implemented in the current framework."
+    }
+  ],
+  "label_permutation_control": {
+    "world_id": "WORLD_2",
+    "permutation": [
+      2,
+      0,
+      1,
+      3
+    ],
+    "original_test_loss_mean": 15.526380712720123,
+    "relabeled_test_loss_mean": 5.408855957390523,
+    "original_causal_f1": 0.3333333333333333,
+    "relabeled_causal_f1": 0.5,
+    "classification": "LABEL_OR_ORDER_CONFOUND_DETECTED"
+  },
+  "scaling_study": {
+    "feasible_event_counts": [
+      4,
+      6,
+      8
+    ],
+    "skipped_event_counts": [
+      12,
+      20
+    ],
+    "skipped_reason": "dense qubit simulation cost scales as 4**event_count; not executed in this reference phase",
+    "points": [
+      {
+        "event_count": 4,
+        "world_id": "WORLD_1_N4",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 9.79501866533114,
+          "std": 7.0213912866913315,
+          "median": 8.41942671224724,
+          "minimum": 0.11784987577289194,
+          "maximum": 20.504023868501832,
+          "per_seed": [
+            20.421751974901102,
+            0.11784987577289194,
+            20.504023868501832,
+            3.6219383009997705,
+            5.376880350785432,
+            7.735484924406977,
+            2.556479888141253,
+            11.324159212458998,
+            9.103368500087505,
+            17.188249757255665
+          ]
+        },
+        "coordinate_error_mean": 2.3972705041583167,
+        "causal_f1_mean": 0.48571428571428565,
+        "curvature_error_mean": 1.1239789422646542
+      },
+      {
+        "event_count": 4,
+        "world_id": "WORLD_2_N4",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 15.526380712720123,
+          "std": 17.901986093222103,
+          "median": 11.281580671454467,
+          "minimum": 0.018073770630170478,
+          "maximum": 66.64590605289737,
+          "per_seed": [
+            66.64590605289737,
+            0.018073770630170478,
+            1.4817160975295114,
+            13.849040911752603,
+            9.406472121558817,
+            13.156689221350117,
+            9.406466695834146,
+            7.8707572371191175,
+            14.5838039763828,
+            18.8448810421466
+          ]
+        },
+        "coordinate_error_mean": 7.073589234924491,
+        "causal_f1_mean": 0.5468253968253969,
+        "curvature_error_mean": 0.27413156789486437
+      },
+      {
+        "event_count": 4,
+        "world_id": "WORLD_3_N4",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 9.706991298246269,
+          "std": 7.8999273045218645,
+          "median": 7.397193940626439,
+          "minimum": 0.1626426646085957,
+          "maximum": 25.249712265145742,
+          "per_seed": [
+            23.270313698585937,
+            0.1626426646085957,
+            1.4521518008848004,
+            5.824796286187555,
+            6.456730753758084,
+            11.011164484326253,
+            6.864752365616031,
+            8.848013147712837,
+            7.929635515636845,
+            25.249712265145742
+          ]
+        },
+        "coordinate_error_mean": 4.099485150740231,
+        "causal_f1_mean": 0.4904761904761904,
+        "curvature_error_mean": 0.26505845316384724
+      },
+      {
+        "event_count": 6,
+        "world_id": "WORLD_1_N6",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 7.1035936962339274,
+          "std": 4.27557544635838,
+          "median": 5.920849337880025,
+          "minimum": 1.751868393543549,
+          "maximum": 15.671825352383317,
+          "per_seed": [
+            5.406633428980437,
+            6.139746900336309,
+            15.671825352383317,
+            11.96511259133644,
+            2.6336352157409615,
+            1.751868393543549,
+            3.4242914958335446,
+            5.701951775423741,
+            7.016278437531223,
+            11.324593371229755
+          ]
+        },
+        "coordinate_error_mean": 1.340925648517867,
+        "causal_f1_mean": 0.3605340557275542,
+        "curvature_error_mean": 0.033444577234188394
+      },
+      {
+        "event_count": 6,
+        "world_id": "WORLD_2_N6",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 15.07600947207066,
+          "std": 9.032653885492364,
+          "median": 12.07639749108582,
+          "minimum": 4.359499985355211,
+          "maximum": 30.901528359476103,
+          "per_seed": [
+            10.542363934876542,
+            13.610431047295096,
+            30.901528359476103,
+            26.35548998858734,
+            4.359499985355211,
+            4.8638632427078425,
+            7.478268039522779,
+            10.027521348958034,
+            17.10170420697703,
+            25.519424566950615
+          ]
+        },
+        "coordinate_error_mean": 1.3219666631402753,
+        "causal_f1_mean": 0.31050862450243255,
+        "curvature_error_mean": 0.12155463396055408
+      },
+      {
+        "event_count": 6,
+        "world_id": "WORLD_3_N6",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 23.848691132678283,
+          "std": 17.40858864783339,
+          "median": 17.070591392224998,
+          "minimum": 7.399424437289906,
+          "maximum": 66.191712280635,
+          "per_seed": [
+            14.130625251627324,
+            17.956603126948785,
+            66.191712280635,
+            32.236514397641464,
+            7.399424437289906,
+            8.943302504039108,
+            8.878005319979062,
+            16.184579657501207,
+            26.782266541618018,
+            39.78387780950293
+          ]
+        },
+        "coordinate_error_mean": 1.3215237134855822,
+        "causal_f1_mean": 0.28031512605042014,
+        "curvature_error_mean": 0.21125173314978682
+      },
+      {
+        "event_count": 8,
+        "world_id": "WORLD_1_N8",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 10.736388953194336,
+          "std": 4.70872495025575,
+          "median": 10.459619750795474,
+          "minimum": 3.5592103181661425,
+          "maximum": 17.111747435197938,
+          "per_seed": [
+            3.5592103181661425,
+            9.180823203394853,
+            4.531281165085008,
+            7.745365675228189,
+            13.772726199492537,
+            7.458119707422689,
+            17.111747435197938,
+            11.738416298196094,
+            16.620451195584753,
+            15.645748334175153
+          ]
+        },
+        "coordinate_error_mean": 1.389600216212329,
+        "causal_f1_mean": 0.2692804329740795,
+        "curvature_error_mean": 0.004070511469783914
+      },
+      {
+        "event_count": 8,
+        "world_id": "WORLD_2_N8",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 23.818143589389194,
+          "std": 9.391441985919961,
+          "median": 24.433923745913734,
+          "minimum": 8.592650445224185,
+          "maximum": 38.19208939705401,
+          "per_seed": [
+            8.592650445224185,
+            22.231070071082588,
+            15.617671499218728,
+            15.305975248618216,
+            27.533076468021978,
+            15.8532679450035,
+            35.58193439322948,
+            26.63677742074488,
+            38.19208939705401,
+            32.63692300569438
+          ]
+        },
+        "coordinate_error_mean": 1.384672452001651,
+        "causal_f1_mean": 0.24002614312991857,
+        "curvature_error_mean": 0.11567846911539728
+      },
+      {
+        "event_count": 8,
+        "world_id": "WORLD_3_N8",
+        "test_loss": {
+          "seed_count": 10,
+          "mean": 52.22608947911466,
+          "std": 17.06994675821294,
+          "median": 55.18081915974876,
+          "minimum": 23.32741706278721,
+          "maximum": 82.0384729679737,
+          "per_seed": [
+            40.116596277957484,
+            23.32741706278721,
+            59.894151887032,
+            50.46748643246551,
+            27.40637159389689,
+            49.896351811344886,
+            60.61364787239351,
+            82.0384729679737,
+            63.78543870871198,
+            64.71496017658346
+          ]
+        },
+        "coordinate_error_mean": 1.3701340814213325,
+        "causal_f1_mean": 0.14163803629320867,
+        "curvature_error_mean": 0.2806305573880063
+      }
+    ]
+  },
+  "intervention_family_robustness": {
+    "X": {
+      "experiment_id": "EXP-HIST-INTERVENTION-X-001",
+      "geometry_hidden": true,
+      "observable_source": "coupled_process[WORLD_2]_intervention[X]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 16.529328763224402,
+          "validation_loss": 8.947071242950484,
+          "test_loss": 2.9901090198167233,
+          "causal_precision": 1.0,
+          "causal_recall": 0.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 0.021542946175005042,
+          "validation_loss": 6.322421605805894,
+          "test_loss": 0.5940592056298866,
+          "causal_precision": 0.4,
+          "causal_recall": 0.6666666666666666,
+          "causal_f1": 0.5,
+          "coordinate_relative_error": 2.6073147832585977,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 1.327436513947625e-09,
+          "validation_loss": 3.1748185616074878,
+          "test_loss": 66.64590605289737,
+          "causal_precision": 0.3333333333333333,
+          "causal_recall": 0.3333333333333333,
+          "causal_f1": 0.3333333333333333,
+          "coordinate_relative_error": 18.18086244671119,
+          "curvature_invariant_error": 0.11375463050378527,
+          "fitted_scale": 0.11240018605625977,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 5.412710169877308,
+          "std": 8.106596021766386,
+          "median": 2.9901090198167233,
+          "minimum": 0.10233765017471282,
+          "maximum": 28.87865146938666,
+          "per_seed": [
+            2.9901090198167233,
+            0.3888772969251871,
+            2.9901090198167233,
+            0.28653964675147425,
+            4.760075268226216,
+            0.10233765017471282,
+            7.463644641291465,
+            3.2766486665671977,
+            28.87865146938666,
+            2.9901090198167233
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 6.25154130208505,
+          "std": 5.934326882266196,
+          "median": 4.414738230915231,
+          "minimum": 0.05534781133612579,
+          "maximum": 17.417627768164415,
+          "per_seed": [
+            0.5940592056298866,
+            0.05534781133612579,
+            2.177391117433904,
+            7.58275454755631,
+            9.145491670425393,
+            15.757073712977974,
+            6.025886685735231,
+            2.80358977609523,
+            17.417627768164415,
+            0.9561907254960221
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 15.526380712720123,
+          "std": 17.901986093222103,
+          "median": 11.281580671454467,
+          "minimum": 0.018073770630170478,
+          "maximum": 66.64590605289737,
+          "per_seed": [
+            66.64590605289737,
+            0.018073770630170478,
+            1.4817160975295114,
+            13.849040911752603,
+            9.406472121558817,
+            13.156689221350117,
+            9.406466695834146,
+            7.8707572371191175,
+            14.5838039763828,
+            18.8448810421466
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    },
+    "Z": {
+      "experiment_id": "EXP-HIST-INTERVENTION-Z-001",
+      "geometry_hidden": true,
+      "observable_source": "coupled_process[WORLD_2]_intervention[Z]",
+      "coupling_mechanism": "geometry_dependent_channel_strength_from_invariant_interval",
+      "baselines": {
+        "NULL": {
+          "model_id": "NULL",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 0,
+          "train_loss": 16.529328763224402,
+          "validation_loss": 8.947071242950484,
+          "test_loss": 2.9901090198167233,
+          "causal_precision": 1.0,
+          "causal_recall": 1.0,
+          "causal_f1": 1.0,
+          "coordinate_relative_error": 1.0,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": null,
+          "mapping_is_physical_law": false
+        },
+        "RESTRICTED": {
+          "model_id": "RESTRICTED",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 16,
+          "train_loss": 2.3156800085079524e-17,
+          "validation_loss": 2.587086218687914,
+          "test_loss": 3.5558566733703225,
+          "causal_precision": 0.0,
+          "causal_recall": 1.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 2.738164716502978,
+          "curvature_invariant_error": 0.1777963729636123,
+          "fitted_scale": 0.0,
+          "mapping_is_physical_law": false
+        },
+        "FLEXIBLE": {
+          "model_id": "FLEXIBLE",
+          "observable_mode": "ALL_OBSERVABLES",
+          "parameter_count": 17,
+          "train_loss": 2.986207284273414e-22,
+          "validation_loss": 6.409784196339598,
+          "test_loss": 1.18442749568616,
+          "causal_precision": 0.0,
+          "causal_recall": 1.0,
+          "causal_f1": 0.0,
+          "coordinate_relative_error": 2.6527806906034965,
+          "curvature_invariant_error": 0.1777963729636028,
+          "fitted_scale": 3.9848697222833736e-08,
+          "mapping_is_physical_law": false
+        }
+      },
+      "seed_statistics": {
+        "NULL": {
+          "seed_count": 10,
+          "mean": 5.412710169877308,
+          "std": 8.106596021766386,
+          "median": 2.9901090198167233,
+          "minimum": 0.10233765017471282,
+          "maximum": 28.87865146938666,
+          "per_seed": [
+            2.9901090198167233,
+            0.3888772969251871,
+            2.9901090198167233,
+            0.28653964675147425,
+            4.760075268226216,
+            0.10233765017471282,
+            7.463644641291465,
+            3.2766486665671977,
+            28.87865146938666,
+            2.9901090198167233
+          ]
+        },
+        "RESTRICTED": {
+          "seed_count": 10,
+          "mean": 6.954716811327674,
+          "std": 4.76466209371218,
+          "median": 6.674391936342777,
+          "minimum": 0.03786133346503029,
+          "maximum": 15.757073712977974,
+          "per_seed": [
+            3.5558566733703225,
+            0.03786133346503029,
+            4.096787321077148,
+            7.112654954870576,
+            9.127151907071925,
+            15.757073712977974,
+            6.236128917814977,
+            12.39508943857849,
+            10.279241079778194,
+            0.9493227742721049
+          ]
+        },
+        "FLEXIBLE": {
+          "seed_count": 10,
+          "mean": 6.26520611859298,
+          "std": 6.026709199581827,
+          "median": 5.4476278646508325,
+          "minimum": 0.021021705280142473,
+          "maximum": 19.769865439203503,
+          "per_seed": [
+            1.18442749568616,
+            0.021021705280142473,
+            1.2389253003236838,
+            4.645928421548363,
+            9.406467011245667,
+            13.156689221350117,
+            6.249327307753302,
+            6.262751385620519,
+            19.769865439203503,
+            0.7166578979183368
+          ]
+        }
+      },
+      "q_norm": 0.0,
+      "delta_norm": 0.0,
+      "claims_new_physics": false,
+      "claims_time_travel": false
+    }
+  },
+  "retention_curve": {
+    "world_id": "WORLD_2",
+    "points": [
+      {
+        "eta": 0.0,
+        "f_geom": 0.0,
+        "test_loss": 4.422051279279748,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.1669463014140622
+      },
+      {
+        "eta": 0.2,
+        "f_geom": 0.0,
+        "test_loss": 4.118695845268869,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.1680615195007784
+      },
+      {
+        "eta": 0.4,
+        "f_geom": 0.16666666666666669,
+        "test_loss": 7.522663892394285,
+        "causal_f1": 0.33333333333333337,
+        "coordinate_relative_error": 1.7438894041142903
+      },
+      {
+        "eta": 0.6,
+        "f_geom": 0.16666666666666669,
+        "test_loss": 6.143883609953889,
+        "causal_f1": 0.33333333333333337,
+        "coordinate_relative_error": 1.3296291711177917
+      },
+      {
+        "eta": 0.8,
+        "f_geom": 0.0,
+        "test_loss": 6.608505098341308,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.1047582037767816
+      },
+      {
+        "eta": 1.0,
+        "f_geom": 0.3333333333333333,
+        "test_loss": 7.88712552405075,
+        "causal_f1": 0.6666666666666666,
+        "coordinate_relative_error": 1.283757837215196
+      }
+    ],
+    "zero_coupling_points": [
+      {
+        "eta": 0.0,
+        "f_geom": 0.0,
+        "test_loss": 1.5947015228864156,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0395357809212262
+      },
+      {
+        "eta": 0.2,
+        "f_geom": 0.0,
+        "test_loss": 1.5950305362719936,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0396022102518865
+      },
+      {
+        "eta": 0.4,
+        "f_geom": 0.0,
+        "test_loss": 1.5963630439478262,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0396945853136261
+      },
+      {
+        "eta": 0.6,
+        "f_geom": 0.0,
+        "test_loss": 1.596014416921114,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0396348154737851
+      },
+      {
+        "eta": 0.8,
+        "f_geom": 0.0,
+        "test_loss": 1.595301582020776,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0395854260931328
+      },
+      {
+        "eta": 1.0,
+        "f_geom": 0.0,
+        "test_loss": 1.5959778691277466,
+        "causal_f1": 0.0,
+        "coordinate_relative_error": 1.0396613821726846
+      }
+    ]
+  }
+}

@@ -30,3 +30,45 @@ Machine-readable output: `results/historical/historical_reconstruction_results.j
 - **EXP-HIST-RETENTION-001:** `F_geom(eta)` is computed at six retention levels per world; it is a benchmark quantity, not a physical law.
 
 **Overall classification: `OPTIMIZATION_INSUFFICIENT`** for all three worlds under `classify_historical_reconstruction`. The coupling mechanism demonstrably carries geometry-dependent signal (beats its own randomized control, and worlds are mutually identifiable), but the current small-N nonlinear least-squares fit does not reliably converge to a low-loss reconstruction. This is reported as a genuine negative/inconclusive result rather than adjusted to force a positive one.
+
+## Experimental-integrity / identifiability audit (follow-up phase)
+
+Machine-readable output: `results/historical/integrity_audit_results.json` (from `run_integrity_audit.py`), run on `WORLD_2` (temporal-conformal) at 10 seeds.
+
+**Control matrix (FLEXIBLE, mean test loss across 10 seeds):**
+
+| Control | mean | std | median | min | max |
+|---|---|---|---|---|---|
+| COUPLED | 15.53 | 17.90 | 11.28 | 0.018 | 66.65 |
+| ZERO_COUPLING | 0.65 | 0.98 | 0.12 | 0.024 | 3.00 |
+| SHUFFLED_GEOMETRY | 5.92 | 4.56 | 5.78 | 0.076 | 12.93 |
+| RANDOMIZED_ORDER | 195.77 | 191.79 | 210.77 | 4.29 | 626.98 |
+| RANDOMIZED_OBSERVABLE (permutation) | 977.41 | 2630.35 | 16.78 | 2.23 | 8838.20 |
+
+COUPLED is *worse* on average than `ZERO_COUPLING`: with no coupling at all, mutual information collapses to a near-uniform (degenerate) target that a nonlinear fit satisfies almost trivially, producing a spuriously low loss that is not evidence of better reconstruction. This is exactly the kind of artifact the integrity audit is designed to catch.
+
+**Label/order confound (section 5):** relabeling `WORLD_2`'s four events with a fixed permutation and re-running the identical `COUPLED` pipeline changed the mean test loss from 15.53 to 5.41 (a factor of ~3, `relative_gap` far above the 0.5 tolerance) -> **`LABEL_OR_ORDER_CONFOUND_DETECTED`**. The current small-N pipeline is not invariant to a pure relabeling of the same physical world, which it should be if only geometry mattered.
+
+**Scientific gate:** `train_test_leakage=PASS`, `causal_leakage=PASS`, `geometry_leakage=PASS`, `scaling_study_present=PASS`, `intervention_robustness_present=PASS`, but **`order_confound=FAIL`** and **`label_confound=FAIL`**.
+
+**FINAL CLASSIFICATION: `EXPERIMENTAL_CONFOUND_PRESENT`.** Per the predefined classification logic, a failing order/label-confound gate forces this outcome unconditionally; no positive conclusion is reachable. This supersedes the earlier phase's `OPTIMIZATION_INSUFFICIENT` reading -- the earlier positive-looking signal (COUPLED beating the pairwise-permutation randomized control) does not survive a leakage-free, confound-checked protocol as currently implemented.
+
+**Observable attribution (section 3):** with matched splits, `MI_ONLY` (test_loss 7.06), `CAUSAL_ONLY` (8.33), `MI_PLUS_CAUSAL` (7.89), `MULTIPARTITE_ONLY` (8.33), and `ALL_OBSERVABLES` (7.89) are all similar in magnitude; causal_f1 is identical (0.667) across every mode. This does not show a clear attribution advantage for any single observable type in the current setup.
+
+**Identifiability (weak sense only):** all three world pairs remain `OBSERVABLY_DISTINCT` (distances 0.17-0.28). The stronger inverse-model identifiability test described in section 4 is not implemented (`stronger_test_available=False`).
+
+**N-scaling study (feasible sizes N=4,6,8 only; see LIMITATIONS.md for N=12,20):** test-loss mean does not improve monotonically with N (e.g. WORLD_2: 15.53 at N=4, 15.08 at N=6, 23.82 at N=8); causal_f1 mean decreases with N (0.55 -> 0.31 -> 0.24). There is no evidence in this range that reconstruction improves systematically with relational sample size.
+
+**Intervention-family robustness:** X and Z single-qubit interventions give different FLEXIBLE mean test losses (15.53 vs 6.27), indicating the causal-observable signature is not stable across intervention families in the current construction.
+
+**Retention curve as control only (section 8):** `F_geom(eta)` for COUPLED is non-monotonic (0, 0, 0.167, 0.167, 0, 0.333) and the ZERO_COUPLING control is flat at 0 for every eta -- COUPLED does not cleanly dominate its own zero-coupling control across the sweep, consistent with the confound finding above.
+
+## Root-cause analysis of the order/label confound (diagnosis only, no repair attempted)
+
+Machine-readable output: `results/historical/root_cause_analysis_results.json` (from `run_root_cause_analysis.py`). **Root-cause classification: `MULTIPLE_CONFUNDS`.** Full mechanism and evidence are in docs/AUDIT.md; summary:
+
+- The fixed-order construction couples events by raw index adjacency (`(0,1),(1,2),(2,3)`), never by a declared geometric/causal criterion. Relabeling `WORLD_2`'s events with permutation `(2,0,1,3)` changes the coupling graph to `{(0,2),(0,1),(1,3)}` -- only one edge is shared, and every observable component (pairwise MI, multipartite information, causal estimate, intervention-response tensor) changes once mapped back to original-event identity. On the one shared edge, the coupling angle matches exactly, showing the coupling LAW itself is not the problem.
+- Exhaustively enumerating all 24 relabelings of `WORLD_2` shows mean test loss is only weakly correlated (0.14) with a simple index-displacement feature, and adjacency-preserving vs adjacency-breaking permutations have similar group means (13.70 vs 12.11) -- the effect is structural/discrete (which edges get coupled), not a smooth function of "how shuffled" the labels are.
+- Four explicit non-geometric controls (A: randomized labels, B: same graph/random strengths, C: same strengths/randomized order, D: same geometry/randomized indexing) all move the mean test loss substantially away from the `COUPLED` baseline (18.28), confirming reconstruction difficulty is heavily driven by non-geometric structure.
+
+**The scientific classification remains `EXPERIMENTAL_CONFOUND_PRESENT`.** This phase explains the mechanism; it does not fix it, per instruction.

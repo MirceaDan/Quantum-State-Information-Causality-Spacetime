@@ -22,7 +22,8 @@ Q and Delta_munu remain exactly zero throughout (see ``speculative_gate``).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import dataclasses
+from dataclasses import dataclass
 import numpy as np
 from scipy.optimize import least_squares
 
@@ -35,7 +36,16 @@ from .geometry_reconstruction import (
 )
 from .gr import conformal_geometry, minkowski_geometry
 from .ground_truth import GroundTruthWorld
-from .historical_process import HistoricalProcessResult, build_geometry_coupled_history, historical_intervention_response
+from .historical_process import (
+    COUPLED,
+    FIXED_ORDER_CONTROL,
+    RANDOMIZED_ORDER,
+    SHUFFLED_GEOMETRY,
+    ZERO_COUPLING,
+    HistoricalProcessResult,
+    build_geometry_coupled_history,
+    historical_intervention_response,
+)
 from .information import InformationCausalityEngine
 from .speculative_gate import BaselineGate
 
@@ -45,15 +55,39 @@ NULL = "NULL"
 RESTRICTED = "RESTRICTED"
 FLEXIBLE = "FLEXIBLE"
 
+MI_ONLY = "MI_ONLY"
+CAUSAL_ONLY = "CAUSAL_ONLY"
+MI_PLUS_CAUSAL = "MI_PLUS_CAUSAL"
+MULTIPARTITE_ONLY = "MULTIPARTITE_ONLY"
+ALL_OBSERVABLES = "ALL_OBSERVABLES"
+_OBSERVABLE_MODE_FLAGS = {
+    # (use_mutual_information, use_causal, use_multipartite)
+    MI_ONLY: (True, False, False),
+    CAUSAL_ONLY: (False, True, False),
+    MI_PLUS_CAUSAL: (True, True, False),
+    MULTIPARTITE_ONLY: (False, False, True),
+    ALL_OBSERVABLES: (True, True, True),
+}
+
+# Section 4: "OBSERVABLY_DISTINCT" only claims the raw observable vectors differ.
+# "IDENTIFIABLE"/"NON_IDENTIFIABLE" are reserved for a genuine inverse-model
+# statement, which is NOT implemented here (see IdentifiabilityReport docstring).
+OBSERVABLY_DISTINCT = "OBSERVABLY_DISTINCT"
+OBSERVABLY_INDISTINGUISHABLE = "OBSERVABLY_INDISTINGUISHABLE"
 IDENTIFIABLE = "IDENTIFIABLE"
 NON_IDENTIFIABLE = "INFORMATIONALLY_NON_IDENTIFIABLE"
 
+# Section 12: predefined, fixed BEFORE running the final experiment matrix.
+NO_GEOMETRY_SIGNAL_DETECTED = "NO_GEOMETRY_SIGNAL_DETECTED"
+OBSERVABLY_DISTINCT_BUT_NOT_IDENTIFIABLE = "OBSERVABLY_DISTINCT_BUT_NOT_IDENTIFIABLE"
+GEOMETRY_DEPENDENT_SIGNAL_DETECTED = "GEOMETRY_DEPENDENT_SIGNAL_DETECTED"
+OPTIMIZATION_INSUFFICIENT = "OPTIMIZATION_INSUFFICIENT"
+REPRESENTATION_INSUFFICIENT = "REPRESENTATION_INSUFFICIENT"
+INFORMATION_INSUFFICIENT = "INFORMATION_INSUFFICIENT"
+EXPERIMENTAL_CONFOUND_PRESENT = "EXPERIMENTAL_CONFOUND_PRESENT"
+OBSERVABLES_NON_IDENTIFYING = "OBSERVABLES_NON_IDENTIFYING"
 HISTORICAL_RECONSTRUCTION_SUPPORTED = "HISTORICAL_RECONSTRUCTION_SUPPORTED"
 HISTORICAL_RECONSTRUCTION_UNSTABLE = "HISTORICAL_RECONSTRUCTION_UNSTABLE"
-INFORMATION_INSUFFICIENT = "INFORMATION_INSUFFICIENT"
-REPRESENTATION_INSUFFICIENT = "REPRESENTATION_INSUFFICIENT"
-OPTIMIZATION_INSUFFICIENT = "OPTIMIZATION_INSUFFICIENT"
-OBSERVABLES_NON_IDENTIFYING = "OBSERVABLES_NON_IDENTIFYING"
 
 
 # ---------------------------------------------------------------------------
@@ -98,11 +132,26 @@ def _estimate_causal_matrix(tensor: np.ndarray, threshold: float = 0.02) -> np.n
     return matrix
 
 
-def build_historical_observables(process: HistoricalProcessResult, world: GroundTruthWorld) -> HistoricalObservables:
+def build_historical_observables(
+    process: HistoricalProcessResult,
+    world: GroundTruthWorld,
+    intervention_operator: np.ndarray | None = None,
+    intervention_label: str = "X",
+) -> HistoricalObservables:
+    """Build O_t1 from a process result, replaying the SAME control variant for the causal probe."""
     engine = InformationCausalityEngine(process.system)
     pairwise = engine.mutual_information_matrix()
     multipartite = engine.multipartite_information_triples() if process.event_count >= 3 else {}
-    causal_response = historical_intervention_response(world, process.retention, process.length_scale)
+    causal_response = historical_intervention_response(
+        world,
+        process.retention,
+        process.length_scale,
+        intervention_operator=intervention_operator,
+        intervention_label=intervention_label,
+        force_zero_coupling=(process.control_label == ZERO_COUPLING),
+        interval_permutation=process.interval_permutation or None,
+        schedule=process.schedule if process.schedule else None,
+    )
     causal_estimate = _estimate_causal_matrix(causal_response.tensor)
     tensor_3d = causal_response.tensor[:, :, np.newaxis]
     return HistoricalObservables(pairwise, multipartite, tensor_3d, causal_estimate, process.event_count)
@@ -133,17 +182,84 @@ def randomize_historical_observables(observables: HistoricalObservables, seed: i
 
 
 # ---------------------------------------------------------------------------
-# Reconstruction baselines: NULL / RESTRICTED / FLEXIBLE
+# Leakage-free train/validation/test split (section 1 of the integrity audit)
 # ---------------------------------------------------------------------------
 
 
-def _pair_split(event_count: int, seed: int) -> tuple[list[tuple[int, int]], list[tuple[int, int]], list[tuple[int, int]]]:
+def _mask_causal_to_pairs(causal_estimate: np.ndarray, pairs: tuple[tuple[int, int], ...]) -> np.ndarray:
+    """Zero out every causal entry whose underlying event pair is not in ``pairs``."""
+    count = causal_estimate.shape[0]
+    allowed = np.zeros((count, count), dtype=bool)
+    for first, second in pairs:
+        allowed[first, second] = True
+        allowed[second, first] = True
+    return causal_estimate & allowed
+
+
+def assert_causal_subset(causal_matrix: np.ndarray, pairs: tuple[tuple[int, int], ...]) -> None:
+    """Structural leakage guard: raise if any True entry lies outside ``pairs``."""
+    allowed: set[tuple[int, int]] = set()
+    for first, second in pairs:
+        allowed.add((first, second))
+        allowed.add((second, first))
+    for source, target in zip(*np.where(causal_matrix)):
+        if (int(source), int(target)) not in allowed:
+            raise ValueError("causal leakage detected: an entry outside the allowed training pair set reached the optimizer")
+
+
+@dataclass(frozen=True)
+class ObservableSplit:
+    """Deterministic, from-seed train/validation/test split shared by every observable type.
+
+    A causal entry or multipartite triple is assigned to a split ONLY if every
+    pairwise sub-relation it depends on is itself in that split (or an earlier
+    one for triples); this is what prevents validation/test information from
+    reaching the training residual.
+    """
+
+    seed: int
+    train_pairs: tuple[tuple[int, int], ...]
+    validation_pairs: tuple[tuple[int, int], ...]
+    test_pairs: tuple[tuple[int, int], ...]
+    train_causal: np.ndarray
+    validation_causal: np.ndarray
+    test_causal: np.ndarray
+    train_triples: tuple[tuple[int, int, int], ...]
+    validation_triples: tuple[tuple[int, int, int], ...]
+    test_triples: tuple[tuple[int, int, int], ...]
+
+
+def build_observable_split(observables: HistoricalObservables, seed: int) -> ObservableSplit:
+    event_count = observables.event_count
     pairs = [(first, second) for first in range(event_count) for second in range(first + 1, event_count)]
     rng = np.random.default_rng(seed)
     rng.shuffle(pairs)
     train_end = max(1, int(0.6 * len(pairs)))
     validation_end = max(train_end + 1, int(0.8 * len(pairs)))
-    return pairs[:train_end], pairs[train_end:validation_end], pairs[validation_end:]
+    train_pairs, validation_pairs, test_pairs = pairs[:train_end], pairs[train_end:validation_end], pairs[validation_end:]
+    train_set, trainval_set = set(train_pairs), set(train_pairs) | set(validation_pairs)
+
+    def _triple_pairs(triple: tuple[int, int, int]) -> set[tuple[int, int]]:
+        first, second, third = triple
+        return {(first, second), (first, third), (second, third)}
+
+    triples = list(observables.multipartite_information.keys())
+    train_triples = tuple(triple for triple in triples if _triple_pairs(triple) <= train_set)
+    validation_triples = tuple(triple for triple in triples if triple not in train_triples and _triple_pairs(triple) <= trainval_set)
+    test_triples = tuple(triple for triple in triples if triple not in train_triples and triple not in validation_triples)
+
+    return ObservableSplit(
+        seed,
+        tuple(train_pairs),
+        tuple(validation_pairs),
+        tuple(test_pairs),
+        _mask_causal_to_pairs(observables.causal_estimate, tuple(train_pairs)),
+        _mask_causal_to_pairs(observables.causal_estimate, tuple(validation_pairs)),
+        _mask_causal_to_pairs(observables.causal_estimate, tuple(test_pairs)),
+        train_triples,
+        validation_triples,
+        test_triples,
+    )
 
 
 def _dissimilarity_from_information(information: np.ndarray) -> np.ndarray:
@@ -151,9 +267,18 @@ def _dissimilarity_from_information(information: np.ndarray) -> np.ndarray:
     return -np.log((information + 1e-12) / (max_information + 1e-12))
 
 
+def _dissimilarity_from_multipartite(multipartite: dict[tuple[int, int, int], float]) -> dict[tuple[int, int, int], float]:
+    """Modeling assumption: map co-information magnitude to a dissimilarity the same way as pairwise MI."""
+    if not multipartite:
+        return {}
+    max_value = max(float(np.max(np.abs(list(multipartite.values())))), 1e-12)
+    return {triple: float(-np.log((abs(value) + 1e-12) / (max_value + 1e-12))) for triple, value in multipartite.items()}
+
+
 @dataclass(frozen=True)
 class BaselineReport:
     model_id: str
+    observable_mode: str
     parameter_count: int
     train_loss: float
     validation_loss: float
@@ -171,30 +296,45 @@ def _residuals(
     flat: np.ndarray,
     event_count: int,
     flexible: bool,
-    selected_pairs: list[tuple[int, int]],
+    selected_pairs: tuple[tuple[int, int], ...],
     dissimilarity: np.ndarray,
-    causal_estimate: np.ndarray,
+    causal_matrix: np.ndarray,
+    use_mi: bool,
+    use_causal: bool,
+    selected_triples: tuple[tuple[int, int, int], ...],
+    multipartite_dissimilarity: dict[tuple[int, int, int], float],
+    use_multipartite: bool,
 ) -> np.ndarray:
     coordinates = flat[: event_count * 4].reshape(event_count, 4)
     scale = flat[event_count * 4] if flexible else 0.0
-    values = []
-    for first, second in selected_pairs:
+    eta = np.diag([-1.0, 1.0, 1.0, 1.0])
+
+    def _separation(first: int, second: int) -> float:
         difference = coordinates[first] - coordinates[second]
         midpoint_time = 0.5 * (coordinates[first, 0] + coordinates[second, 0])
         conformal_factor = np.exp(2 * scale * midpoint_time) if flexible else 1.0
-        eta = np.diag([-1.0, 1.0, 1.0, 1.0])
-        separation = conformal_factor * float(difference @ eta @ difference)
-        values.append(np.sqrt(abs(separation) + 1e-12) - dissimilarity[first, second])
-    for source, target in zip(*np.where(causal_estimate)):
-        difference = coordinates[source] - coordinates[target]
-        eta = np.diag([-1.0, 1.0, 1.0, 1.0])
-        separation = float(difference @ eta @ difference)
-        values.append(max(0.0, separation))
-        values.append(max(0.0, coordinates[source, 0] - coordinates[target, 0]))
+        return conformal_factor * float(difference @ eta @ difference)
+
+    values: list[float] = []
+    mi_values: list[float] = []
+    if use_mi:
+        for first, second in selected_pairs:
+            mi_values.append(np.sqrt(abs(_separation(first, second)) + 1e-12) - dissimilarity[first, second])
+    values.extend(mi_values)
+    if use_causal:
+        for source, target in zip(*np.where(causal_matrix)):
+            difference = coordinates[source] - coordinates[target]
+            separation = float(difference @ eta @ difference)
+            values.append(max(0.0, separation))
+            values.append(max(0.0, coordinates[source, 0] - coordinates[target, 0]))
+    if use_multipartite:
+        for first, second, third in selected_triples:
+            total = sum(np.sqrt(abs(_separation(a, b)) + 1e-12) for a, b in ((first, second), (first, third), (second, third)))
+            values.append(total - multipartite_dissimilarity[(first, second, third)])
     values.extend(coordinates[0].tolist())
     if flexible:
         values.append(0.1 * scale)
-    return np.asarray(values, dtype=float)
+    return np.asarray(values, dtype=float), len(mi_values)
 
 
 def _fit(
@@ -204,11 +344,23 @@ def _fit(
     true_coordinates: np.ndarray,
     true_scalar_curvature: float,
     reference_point: np.ndarray,
+    observable_mode: str = ALL_OBSERVABLES,
 ) -> BaselineReport:
+    """Fit with ONLY train-split observables; validation/test are used solely for evaluation.
+
+    ``observable_mode`` selects which observable types feed the fitting
+    residual (section 3 attribution ablation); evaluation always uses the same
+    held-out mutual-information-based interval metric regardless of mode, so
+    the five ablations remain directly comparable.
+    """
     event_count = observables.event_count
-    train_pairs, validation_pairs, test_pairs = _pair_split(event_count, seed)
+    split = build_observable_split(observables, seed)
     dissimilarity = _dissimilarity_from_information(observables.pairwise_information)
+    multipartite_dissimilarity = _dissimilarity_from_multipartite(observables.multipartite_information)
+    use_mi, use_causal, use_multipartite = _OBSERVABLE_MODE_FLAGS[observable_mode]
     rng = np.random.default_rng(seed)
+
+    assert_causal_subset(split.train_causal, split.train_pairs)
 
     if mode == NULL:
         fitted = np.zeros((event_count, 4))
@@ -222,21 +374,32 @@ def _fit(
         initial_flat = initial.ravel()
         if flexible:
             initial_flat = np.concatenate([initial_flat, [0.0]])
-        result = least_squares(
-            lambda values: _residuals(values, event_count, flexible, train_pairs, dissimilarity, observables.causal_estimate),
-            initial_flat,
-            max_nfev=800,
-        ).x
+
+        def _train_residuals(values: np.ndarray) -> np.ndarray:
+            assert_causal_subset(split.train_causal, split.train_pairs)
+            residual, _ = _residuals(
+                values, event_count, flexible, split.train_pairs, dissimilarity, split.train_causal,
+                use_mi, use_causal, split.train_triples, multipartite_dissimilarity, use_multipartite,
+            )
+            return residual
+
+        result = least_squares(_train_residuals, initial_flat, max_nfev=800).x
         fitted = result[: event_count * 4].reshape(event_count, 4)
         scale_hat = float(result[event_count * 4]) if flexible else 0.0
         parameter_count = event_count * 4 + (1 if flexible else 0)
 
-    def pair_loss(selected_pairs: list[tuple[int, int]]) -> float:
+    def _held_out_loss(selected_pairs: tuple[tuple[int, int], ...]) -> float:
+        """Evaluation ALWAYS uses the plain MI-interval metric, identical across observable modes."""
         if not selected_pairs:
             return 0.0
         flat = fitted.ravel() if scale_hat is None else np.concatenate([fitted.ravel(), [scale_hat]])
-        values = _residuals(flat, event_count, scale_hat is not None, selected_pairs, dissimilarity, observables.causal_estimate)
-        return float(np.mean(values[: len(selected_pairs)] ** 2))
+        empty_causal = np.zeros_like(observables.causal_estimate)
+        values, mi_count = _residuals(flat, event_count, scale_hat is not None, selected_pairs, dissimilarity, empty_causal, True, False, (), {}, False)
+        return float(np.mean(values[:mi_count] ** 2))
+
+    train_loss = _held_out_loss(split.train_pairs)
+    validation_loss = _held_out_loss(split.validation_pairs)
+    test_loss = _held_out_loss(split.test_pairs)
 
     embedding = LorentzianEmbedding(fitted)
     causal_metrics = embedding.compare_causal_relations(observables.causal_estimate)
@@ -250,10 +413,11 @@ def _fit(
 
     return BaselineReport(
         mode,
+        observable_mode,
         parameter_count,
-        pair_loss(train_pairs),
-        pair_loss(validation_pairs),
-        pair_loss(test_pairs),
+        train_loss,
+        validation_loss,
+        test_loss,
         float(causal_metrics["precision"]),
         float(causal_metrics["recall"]),
         float(causal_metrics["f1"]),
@@ -267,14 +431,24 @@ def compare_historical_baselines(
     world: GroundTruthWorld,
     observables: HistoricalObservables,
     seed: int,
-    true_scale: float = 0.0,
+    observable_mode: str = ALL_OBSERVABLES,
 ) -> dict[str, BaselineReport]:
     """Fit NULL / RESTRICTED / FLEXIBLE reconstructions on the SAME observable bundle and split."""
     reference_point = world.coordinates.mean(axis=0)
     true_scalar_curvature = float(world.geometry.curvature_tensors(reference_point).scalar_curvature)
     return {
-        mode: _fit(observables, mode, seed, world.coordinates, true_scalar_curvature, reference_point)
+        mode: _fit(observables, mode, seed, world.coordinates, true_scalar_curvature, reference_point, observable_mode)
         for mode in (NULL, RESTRICTED, FLEXIBLE)
+    }
+
+
+def run_observable_ablation(world: GroundTruthWorld, observables: HistoricalObservables, seed: int) -> dict[str, BaselineReport]:
+    """Section 3: attribution ablation. Same FLEXIBLE model capacity and split for all 5 modes."""
+    reference_point = world.coordinates.mean(axis=0)
+    true_scalar_curvature = float(world.geometry.curvature_tensors(reference_point).scalar_curvature)
+    return {
+        mode: _fit(observables, FLEXIBLE, seed, world.coordinates, true_scalar_curvature, reference_point, mode)
+        for mode in (MI_ONLY, CAUSAL_ONLY, MI_PLUS_CAUSAL, MULTIPARTITE_ONLY, ALL_OBSERVABLES)
     }
 
 
@@ -290,14 +464,24 @@ class IdentifiabilityReport:
     observable_distance: float
     classification: str
     tolerance: float
+    stronger_test_available: bool = False
+    note: str = (
+        "This compares flattened observable vectors only (OBSERVABLY_DISTINCT / "
+        "OBSERVABLY_INDISTINGUISHABLE). It does NOT establish inverse-problem "
+        "IDENTIFIABLE/NON_IDENTIFIABLE in the stronger sense of section 4: a "
+        "rigorous search over reconstruction-model parameterizations for a "
+        "geometrically-inequivalent world producing equivalent observables is "
+        "not implemented in the current framework."
+    )
 
 
 def run_identifiability_test(world_a: GroundTruthWorld, world_b: GroundTruthWorld, retention: float = 1.0, tolerance: float = 1e-6) -> IdentifiabilityReport:
+    """Weak observable-distance probe only; see ``IdentifiabilityReport.note``."""
     BaselineGate().validate()
     observables_a = build_historical_observables(build_geometry_coupled_history(world_a, retention), world_a)
     observables_b = build_historical_observables(build_geometry_coupled_history(world_b, retention), world_b)
     distance = float(np.linalg.norm(observables_a.flatten() - observables_b.flatten()))
-    classification = NON_IDENTIFIABLE if distance <= tolerance else IDENTIFIABLE
+    classification = OBSERVABLY_INDISTINGUISHABLE if distance <= tolerance else OBSERVABLY_DISTINCT
     return IdentifiabilityReport(world_a.world_id, world_b.world_id, distance, classification, tolerance)
 
 
@@ -319,6 +503,7 @@ class RetentionPoint:
 class RetentionCurveReport:
     world_id: str
     points: tuple[RetentionPoint, ...]
+    zero_coupling_points: tuple[RetentionPoint, ...] = ()
 
     @property
     def etas(self) -> tuple[float, ...]:
@@ -328,6 +513,10 @@ class RetentionCurveReport:
     def scores(self) -> tuple[float, ...]:
         return tuple(point.f_geom for point in self.points)
 
+    @property
+    def zero_coupling_scores(self) -> tuple[float, ...]:
+        return tuple(point.f_geom for point in self.zero_coupling_points)
+
 
 def _f_geom(causal_f1: float, coordinate_relative_error: float) -> float:
     """Benchmark score, not a physical law: mixes causal agreement and coordinate diagnostic error."""
@@ -335,14 +524,27 @@ def _f_geom(causal_f1: float, coordinate_relative_error: float) -> float:
 
 
 def run_information_retention_curve(world: GroundTruthWorld, etas: tuple[float, ...] = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0), seed: int = 1234) -> RetentionCurveReport:
+    """Section 8: F_geom(eta) is a CONTROL diagnostic, not a physical quantity.
+
+    Also computes the same curve for the zero-coupling process at every eta, so
+    that "does the geometry-dependent signal vanish as retention decreases" can
+    be checked against "does a process with no geometric coupling at all behave
+    any differently" (it should not, if the coupling mechanism is what matters).
+    """
     BaselineGate().validate()
     points = []
+    zero_points = []
     for eta in etas:
         process = build_geometry_coupled_history(world, retention=eta)
         observables = build_historical_observables(process, world)
         report = compare_historical_baselines(world, observables, seed)[FLEXIBLE]
         points.append(RetentionPoint(eta, _f_geom(report.causal_f1, report.coordinate_relative_error), report.test_loss, report.causal_f1, report.coordinate_relative_error))
-    return RetentionCurveReport(world.world_id, tuple(points))
+
+        zero_process = build_geometry_coupled_history(world, retention=eta, force_zero_coupling=True)
+        zero_observables = build_historical_observables(zero_process, world)
+        zero_report = compare_historical_baselines(world, zero_observables, seed)[FLEXIBLE]
+        zero_points.append(RetentionPoint(eta, _f_geom(zero_report.causal_f1, zero_report.coordinate_relative_error), zero_report.test_loss, zero_report.causal_f1, zero_report.coordinate_relative_error))
+    return RetentionCurveReport(world.world_id, tuple(points), tuple(zero_points))
 
 
 # ---------------------------------------------------------------------------
@@ -385,24 +587,81 @@ class HistoricalExperimentReport:
     claims_time_travel: bool = False
 
 
-def run_coupled_experiment(world: GroundTruthWorld, seeds: tuple[int, ...] = tuple(range(10)), retention: float = 1.0) -> HistoricalExperimentReport:
-    """EXP-HIST-COUPLED-001: geometry-coupled relational process -> historical geometry."""
+def build_relabeled_world(world: GroundTruthWorld, permutation: tuple[int, ...]) -> GroundTruthWorld:
+    """Consistently relabel every event-indexed field of ``world`` (section 5 label-confound probe)."""
+    index_of = {old: new for new, old in enumerate(permutation)}
+    perm = list(permutation)
+    pair_classifications = {}
+    for (first, second), label in world.pair_classifications.items():
+        new_first, new_second = index_of[first], index_of[second]
+        key = (new_first, new_second) if new_first < new_second else (new_second, new_first)
+        pair_classifications[key] = label
+    return dataclasses.replace(
+        world,
+        world_id=f"{world.world_id}_RELABELED",
+        coordinates=world.coordinates[perm],
+        invariant_intervals=world.invariant_intervals[np.ix_(perm, perm)],
+        causal_relation=world.causal_relation[np.ix_(perm, perm)],
+        information_matrix=world.information_matrix[np.ix_(perm, perm)],
+        process_causal_relation=world.process_causal_relation[np.ix_(perm, perm)],
+        pair_classifications=pair_classifications,
+    )
+
+
+def run_process_variant_experiment(
+    world: GroundTruthWorld,
+    control: str,
+    seeds: tuple[int, ...] = tuple(range(10)),
+    retention: float = 1.0,
+    schedule_seed: int = 0,
+) -> "HistoricalExperimentReport":
+    """COUPLED / ZERO_COUPLING / SHUFFLED_GEOMETRY / RANDOMIZED_ORDER, identical pipeline (sections 2 and 10)."""
     BaselineGate().validate()
-    process = build_geometry_coupled_history(world, retention=retention)
+    event_count = len(world.coordinates)
+    step_indices = list(range(event_count - 1))
+    build_kwargs: dict[str, object] = {}
+    if control == ZERO_COUPLING:
+        build_kwargs["force_zero_coupling"] = True
+    elif control == SHUFFLED_GEOMETRY:
+        rng = np.random.default_rng(schedule_seed)
+        permutation = step_indices.copy()
+        rng.shuffle(permutation)
+        build_kwargs["interval_permutation"] = tuple(permutation)
+    elif control == RANDOMIZED_ORDER:
+        rng = np.random.default_rng(schedule_seed)
+        schedule = step_indices.copy()
+        rng.shuffle(schedule)
+        build_kwargs["schedule"] = tuple(schedule)
+    elif control not in (COUPLED, FIXED_ORDER_CONTROL):
+        raise ValueError(f"unknown control variant: {control}")
+
+    process = build_geometry_coupled_history(world, retention=retention, **build_kwargs)
     observables = build_historical_observables(process, world)
     per_seed = [compare_historical_baselines(world, observables, seed) for seed in seeds]
     seed_statistics = {
         mode: _seed_statistics(tuple(reports[mode].test_loss for reports in per_seed))
         for mode in (NULL, RESTRICTED, FLEXIBLE)
     }
+    experiment_ids = {
+        COUPLED: "EXP-HIST-COUPLED-001",
+        FIXED_ORDER_CONTROL: "EXP-HIST-COUPLED-001",
+        ZERO_COUPLING: "EXP-HIST-ZEROCOUPLING-001",
+        SHUFFLED_GEOMETRY: "EXP-HIST-SHUFFLEDGEOM-001",
+        RANDOMIZED_ORDER: "EXP-HIST-RANDORDER-001",
+    }
     return HistoricalExperimentReport(
-        "EXP-HIST-COUPLED-001",
+        experiment_ids[control],
         True,
-        f"geometry_coupled_process[{world.world_id}]",
+        f"{process.control_label.lower()}_process[{world.world_id}]",
         process.coupling_mechanism,
         per_seed[0],
         seed_statistics,
     )
+
+
+def run_coupled_experiment(world: GroundTruthWorld, seeds: tuple[int, ...] = tuple(range(10)), retention: float = 1.0) -> HistoricalExperimentReport:
+    """EXP-HIST-COUPLED-001: geometry-coupled relational process -> historical geometry (FIXED_ORDER_CONTROL)."""
+    return run_process_variant_experiment(world, COUPLED, seeds, retention)
 
 
 def run_randomized_control_experiment(world: GroundTruthWorld, seeds: tuple[int, ...] = tuple(range(10)), retention: float = 1.0) -> HistoricalExperimentReport:
@@ -426,6 +685,52 @@ def run_randomized_control_experiment(world: GroundTruthWorld, seeds: tuple[int,
 
 
 @dataclass(frozen=True)
+class LabelPermutationControlReport:
+    """Section 5: does a pure event relabeling change the result? A large gap
+    means the pipeline secretly depends on event index/order rather than geometry."""
+
+    world_id: str
+    permutation: tuple[int, ...]
+    original_test_loss_mean: float
+    relabeled_test_loss_mean: float
+    original_causal_f1: float
+    relabeled_causal_f1: float
+    classification: str
+
+
+def run_label_permutation_control(
+    world: GroundTruthWorld,
+    seeds: tuple[int, ...] = tuple(range(10)),
+    permutation: tuple[int, ...] | None = None,
+    retention: float = 1.0,
+    tolerance: float = 0.5,
+) -> LabelPermutationControlReport:
+    event_count = len(world.coordinates)
+    if permutation is None:
+        rng = np.random.default_rng(0)
+        permutation = tuple(int(index) for index in rng.permutation(event_count))
+    relabeled_world = build_relabeled_world(world, permutation)
+
+    original = run_process_variant_experiment(world, COUPLED, seeds, retention)
+    relabeled = run_process_variant_experiment(relabeled_world, COUPLED, seeds, retention)
+
+    original_mean = original.seed_statistics[FLEXIBLE].mean
+    relabeled_mean = relabeled.seed_statistics[FLEXIBLE].mean
+    scale = max(abs(original_mean), abs(relabeled_mean), 1e-6)
+    relative_gap = abs(original_mean - relabeled_mean) / scale
+    classification = "LABEL_OR_ORDER_CONFOUND_DETECTED" if relative_gap > tolerance else "NO_LABEL_CONFOUND_DETECTED"
+    return LabelPermutationControlReport(
+        world.world_id,
+        permutation,
+        original_mean,
+        relabeled_mean,
+        original.baselines[FLEXIBLE].causal_f1,
+        relabeled.baselines[FLEXIBLE].causal_f1,
+        classification,
+    )
+
+
+@dataclass(frozen=True)
 class NullBaselineExperimentReport:
     experiment_id: str
     report: GeometryReconstructionReport
@@ -444,47 +749,182 @@ def run_null_baseline_experiment(seed: int = 1234, seeds: tuple[int, ...] = tupl
     return NullBaselineExperimentReport("EXP-HIST-NULL-001", report, multi_seed)
 
 
+# ---------------------------------------------------------------------------
+# Scientific gate (section 11) -- must be checked BEFORE any positive claim
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScientificGate:
+    train_test_leakage: str
+    causal_leakage: str
+    order_confound: str
+    label_confound: str
+    geometry_leakage: str
+    identifiability_status: str
+    scaling_study_present: str
+    intervention_robustness_present: str
+
+    @property
+    def critical_checks_pass(self) -> bool:
+        return self.train_test_leakage == "PASS" and self.causal_leakage == "PASS"
+
+
+def compute_scientific_gate(
+    world: GroundTruthWorld,
+    label_permutation_report: LabelPermutationControlReport,
+    identifiability_reports: list[IdentifiabilityReport],
+    scaling_study_present: bool,
+    intervention_robustness_present: bool,
+    seed: int = 1234,
+) -> ScientificGate:
+    """Structural + regression-tested checks; see tests/test_historical_reconstruction.py."""
+    observables = build_historical_observables(build_geometry_coupled_history(world), world)
+    split = build_observable_split(observables, seed)
+    try:
+        assert_causal_subset(split.train_causal, split.train_pairs)
+        assert not (set(split.train_pairs) & set(split.validation_pairs))
+        assert not (set(split.train_pairs) & set(split.test_pairs))
+        assert not (set(split.validation_pairs) & set(split.test_pairs))
+        train_test_leakage = "PASS"
+        causal_leakage = "PASS"
+    except (ValueError, AssertionError):
+        train_test_leakage = "FAIL"
+        causal_leakage = "FAIL"
+    order_and_label_status = "PASS" if label_permutation_report.classification == "NO_LABEL_CONFOUND_DETECTED" else "FAIL"
+    geometry_leakage = "PASS"  # HistoricalObservables carries no coordinate/metric/world-id field; see dedicated test
+    identifiability_status = "; ".join(f"{report.world_a}-{report.world_b}:{report.classification}" for report in identifiability_reports)
+    return ScientificGate(
+        train_test_leakage,
+        causal_leakage,
+        order_and_label_status,
+        order_and_label_status,
+        geometry_leakage,
+        identifiability_status,
+        "PASS" if scaling_study_present else "FAIL",
+        "PASS" if intervention_robustness_present else "FAIL",
+    )
+
+
 def classify_historical_reconstruction(
+    gate: ScientificGate,
     coupled: HistoricalExperimentReport,
-    randomized: HistoricalExperimentReport,
-    identifiability: list[IdentifiabilityReport],
-    retention_curve: RetentionCurveReport,
+    zero_coupling: HistoricalExperimentReport,
+    shuffled_geometry: HistoricalExperimentReport,
+    randomized_order: HistoricalExperimentReport,
+    randomized_observable_control: HistoricalExperimentReport,
     test_loss_threshold: float = 0.25,
     causal_f1_threshold: float = 0.8,
 ) -> str:
-    """Return the weakest scientifically defensible classification, per spec section 20."""
-    if any(report.classification == NON_IDENTIFIABLE for report in identifiability):
-        return OBSERVABLES_NON_IDENTIFYING
+    """Predefined BEFORE running the final experiment matrix (sections 9, 11, 12).
 
-    flexible = coupled.seed_statistics[FLEXIBLE]
-    restricted = coupled.seed_statistics[RESTRICTED]
-    randomized_flexible = randomized.seed_statistics[FLEXIBLE]
+    If any critical leakage/confound gate fails, STOP: only
+    ``EXPERIMENTAL_CONFOUND_PRESENT`` may be returned, never a positive result.
+    Otherwise the coupled FLEXIBLE model must beat every one of ZERO_COUPLING,
+    SHUFFLED_GEOMETRY, RANDOMIZED_ORDER, and the pairwise-permutation randomized
+    observable control before any geometry-dependent signal is claimed.
+    """
+    if not gate.critical_checks_pass:
+        return EXPERIMENTAL_CONFOUND_PRESENT
+    if gate.order_confound != "PASS" or gate.label_confound != "PASS":
+        return EXPERIMENTAL_CONFOUND_PRESENT
 
-    coupled_report = coupled.baselines[FLEXIBLE]
-    optimizer_failed = flexible.mean > 1.0 and restricted.mean > 1.0
-
+    coupled_flexible = coupled.seed_statistics[FLEXIBLE]
+    coupled_restricted = coupled.seed_statistics[RESTRICTED]
+    optimizer_failed = coupled_flexible.mean > 1.0 and coupled_restricted.mean > 1.0
     if optimizer_failed:
         return OPTIMIZATION_INSUFFICIENT
 
-    beats_randomized = flexible.mean < randomized_flexible.mean
-    beats_restricted = flexible.mean <= restricted.mean
-    monotonic_ish = retention_curve.scores[-1] >= retention_curve.scores[0]
+    beats_zero_coupling = coupled_flexible.mean < zero_coupling.seed_statistics[FLEXIBLE].mean
+    beats_shuffled_geometry = coupled_flexible.mean < shuffled_geometry.seed_statistics[FLEXIBLE].mean
+    beats_randomized_order = coupled_flexible.mean < randomized_order.seed_statistics[FLEXIBLE].mean
+    beats_randomized_observable = coupled_flexible.mean < randomized_observable_control.seed_statistics[FLEXIBLE].mean
+    if not (beats_zero_coupling and beats_shuffled_geometry and beats_randomized_order and beats_randomized_observable):
+        return NO_GEOMETRY_SIGNAL_DETECTED
 
-    if not beats_randomized:
-        return INFORMATION_INSUFFICIENT
-
-    if not beats_restricted or coupled_report.curvature_invariant_error > 1.0:
+    beats_restricted = coupled_flexible.mean <= coupled_restricted.mean
+    if not beats_restricted or coupled.baselines[FLEXIBLE].curvature_invariant_error > 1.0:
         return REPRESENTATION_INSUFFICIENT
 
-    success = (
-        flexible.mean < test_loss_threshold
-        and coupled_report.causal_f1 >= causal_f1_threshold
-        and beats_randomized
-        and beats_restricted
-        and monotonic_ish
-    )
-    if success and flexible.std < test_loss_threshold:
-        return HISTORICAL_RECONSTRUCTION_SUPPORTED
-    if success:
-        return HISTORICAL_RECONSTRUCTION_UNSTABLE
-    return HISTORICAL_RECONSTRUCTION_UNSTABLE
+    return GEOMETRY_DEPENDENT_SIGNAL_DETECTED
+
+
+# ---------------------------------------------------------------------------
+# Intervention-family robustness (section 7)
+# ---------------------------------------------------------------------------
+
+
+def run_intervention_family_robustness(
+    world: GroundTruthWorld,
+    seeds: tuple[int, ...] = tuple(range(10)),
+    retention: float = 1.0,
+) -> dict[str, HistoricalExperimentReport]:
+    """Rebuild the causal observable under X and Z single-qubit interventions.
+
+    Both remain a finite operational approximation, not the exact operational
+    supremum over all possible interventions.
+    """
+    from .historical_process import _PAULI_X, _PAULI_Z  # local import to avoid widening the public API surface
+
+    reports = {}
+    for label, operator in (("X", _PAULI_X), ("Z", _PAULI_Z)):
+        BaselineGate().validate()
+        process = build_geometry_coupled_history(world, retention=retention)
+        observables = build_historical_observables(process, world, intervention_operator=operator, intervention_label=label)
+        per_seed = [compare_historical_baselines(world, observables, seed) for seed in seeds]
+        seed_statistics = {
+            mode: _seed_statistics(tuple(reports_[mode].test_loss for reports_ in per_seed))
+            for mode in (NULL, RESTRICTED, FLEXIBLE)
+        }
+        reports[label] = HistoricalExperimentReport(
+            f"EXP-HIST-INTERVENTION-{label}-001",
+            True,
+            f"coupled_process[{world.world_id}]_intervention[{label}]",
+            process.coupling_mechanism,
+            per_seed[0],
+            seed_statistics,
+        )
+    return reports
+
+
+# ---------------------------------------------------------------------------
+# N-scaling study (section 6)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScalingPoint:
+    event_count: int
+    world_id: str
+    test_loss: SeedStatistics
+    coordinate_error_mean: float
+    causal_f1_mean: float
+    curvature_error_mean: float
+
+
+def run_scaling_study(event_counts: tuple[int, ...], seeds: tuple[int, ...] = tuple(range(10)), retention: float = 1.0) -> list[ScalingPoint]:
+    """Section 6: does reconstruction improve systematically with relational sample size?
+
+    Same coupling law, same geometry families, same optimizer/architecture at
+    every N -- only the number of relational events changes.
+    """
+    from .historical_scaling import build_scaled_worlds
+
+    points = []
+    for event_count in event_counts:
+        for world in build_scaled_worlds(event_count):
+            process = build_geometry_coupled_history(world, retention=retention)
+            observables = build_historical_observables(process, world)
+            per_seed = [compare_historical_baselines(world, observables, seed)[FLEXIBLE] for seed in seeds]
+            test_loss_stats = _seed_statistics(tuple(report.test_loss for report in per_seed))
+            points.append(
+                ScalingPoint(
+                    event_count,
+                    world.world_id,
+                    test_loss_stats,
+                    float(np.mean([report.coordinate_relative_error for report in per_seed])),
+                    float(np.mean([report.causal_f1 for report in per_seed])),
+                    float(np.mean([report.curvature_invariant_error for report in per_seed])),
+                )
+            )
+    return points

@@ -1,0 +1,80 @@
+{
+  "invariance_report": {
+    "permutation": [
+      2,
+      0,
+      1,
+      3
+    ],
+    "coupling_graph_preserved": false,
+    "original_edges": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "relabeled_edges": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        3
+      ]
+    ],
+    "shared_edges": [
+      [
+        0,
+        1
+      ]
+    ],
+    "angles_on_shared_edges_match": true,
+    "pairwise_information_max_abs_diff": 1.2321618782676738,
+    "pairwise_information_changed": true,
+    "multipartite_information_max_abs_diff": 0.023647503759034884,
+    "multipartite_information_changed": true,
+    "causal_estimate_changed": true,
+    "causal_estimate_hamming_distance": 5,
+    "intervention_tensor_max_abs_diff": 0.47366839152301804,
+    "intervention_tensor_changed": true
+  },
+  "predictability_report": {
+    "world_id": "WORLD_2",
+    "permutation_count": 24,
+    "adjacency_preserving_loss_mean": 13.698039717131206,
+    "adjacency_breaking_loss_mean": 12.110933470090314,
+    "adjacency_effect_ratio": 0.8841362501631526,
+    "displacement_loss_correlation": 0.1447009416500402,
+    "loss_variance_explained_by_adjacency": 0.001755407636859034
+  },
+  "controls_report": {
+    "coupled_test_loss_mean": 18.280241790873696,
+    "control_a_randomized_labels_test_loss_mean": 1783.0588133050364,
+    "control_b_randomized_strengths_test_loss_mean": 9.791517963739327,
+    "control_c_randomized_order_test_loss_mean": 185.3000032376264,
+    "control_d_randomized_indexing_test_loss_mean": 6.09105785316972
+  },
+  "root_cause_report": {
+    "process_structure_confund": true,
+    "label_confund": true,
+    "order_confund": false,
+    "split_design_confund": true,
+    "classification": "MULTIPLE_CONFUNDS"
+  },
+  "scientific_classification_unchanged": "EXPERIMENTAL_CONFOUND_PRESENT",
+  "q_norm": 0.0,
+  "delta_norm": 0.0
+}

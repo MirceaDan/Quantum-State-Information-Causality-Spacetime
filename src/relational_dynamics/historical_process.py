@@ -25,6 +25,12 @@ COUPLING_LENGTH_SCALE = 1.0
 MAX_COUPLING_ANGLE = np.pi / 4
 MAX_INFORMATION_LOSS_PROBABILITY = 0.5
 
+FIXED_ORDER_CONTROL = "FIXED_ORDER_CONTROL"
+ZERO_COUPLING = "ZERO_COUPLING"
+SHUFFLED_GEOMETRY = "SHUFFLED_GEOMETRY"
+RANDOMIZED_ORDER = "RANDOMIZED_ORDER"
+COUPLED = "COUPLED"
+
 _PAULI = (
     np.eye(2, dtype=complex),
     np.array([[0, 1], [1, 0]], dtype=complex),
@@ -32,6 +38,8 @@ _PAULI = (
     np.array([[1, 0], [0, -1]], dtype=complex),
 )
 _SWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)
+_PAULI_X = _PAULI[1]
+_PAULI_Z = _PAULI[3]
 
 
 def coupling_angle(interval: float, length_scale: float = COUPLING_LENGTH_SCALE) -> float:
@@ -78,6 +86,9 @@ class HistoricalProcessResult:
     retention: float
     event_count: int
     length_scale: float = COUPLING_LENGTH_SCALE
+    control_label: str = COUPLED
+    schedule: tuple[int, ...] = ()
+    interval_permutation: tuple[int, ...] = ()
     component_label: str = MODELING_ASSUMPTION
 
 
@@ -86,6 +97,12 @@ def build_geometry_coupled_history(
     retention: float = 1.0,
     length_scale: float = COUPLING_LENGTH_SCALE,
     bit_flips: frozenset[int] = frozenset(),
+    force_zero_coupling: bool = False,
+    interval_permutation: tuple[int, ...] | None = None,
+    schedule: tuple[int, ...] | None = None,
+    intervention_operator: np.ndarray | None = None,
+    control_label: str | None = None,
+    angle_override: tuple[float, ...] | None = None,
 ) -> HistoricalProcessResult:
     """Build rho_T = E_T(...E_1(rho_0)) with coupling set only by ``world``'s invariant intervals.
 
@@ -94,22 +111,59 @@ def build_geometry_coupled_history(
     retention=0 applies the maximal local depolarizing probability after every
     coupling step, destroying the relational pairing built up by the coupling.
 
-    ``bit_flips`` applies an X intervention on the listed event indices at the
-    moment each event enters the causal chain (event 0 before any coupling,
-    event k right after the (k-1, k) coupling step and before the (k, k+1)
-    step). This keeps the intervention operationally causal: it can influence
-    later events through subsequent coupling steps but cannot signal earlier
-    events whose coupling steps already completed. Used by
-    ``historical_intervention_response`` to probe causal propagation through
-    the actual dynamics (a frozen final state cannot signal across disjoint
-    subsystems, by the no-communication theorem).
+    Experimental-integrity controls (section 2 of the integrity-audit spec), all
+    using the SAME adjacent-pair architecture and event count as the default
+    (``FIXED_ORDER_CONTROL``) construction:
+
+    - ``force_zero_coupling``: every coupling angle is set to 0 (``ZERO_COUPLING``),
+      so no geometric information enters the process at all.
+    - ``interval_permutation``: a permutation of step indices ``0..event_count-2``
+      that reassigns which of the world's true invariant intervals feeds which
+      coupling step (``SHUFFLED_GEOMETRY``). The ground-truth geometry used for
+      evaluation is never touched; only the coupling-step-to-interval mapping is
+      shuffled.
+    - ``schedule``: a permutation of step indices giving the ORDER in which the
+      fixed set of adjacent-pair gates is executed (``RANDOMIZED_ORDER``). The
+      same set of adjacent qubit pairs is coupled exactly once each; only the
+      execution order changes.
+
+    ``bit_flips`` applies an intervention (``intervention_operator``, default X)
+    on the listed event indices at the moment each event enters the causal chain
+    (event 0 before any coupling, event k right after the (k-1, k) coupling step,
+    independent of ``schedule``). This keeps the intervention operationally
+    causal and is used by ``historical_intervention_response`` to probe causal
+    propagation through the actual dynamics (a frozen final state cannot signal
+    across disjoint subsystems, by the no-communication theorem).
+
+    ``angle_override`` is a DIAGNOSTIC-ONLY escape hatch for the root-cause
+    audit (``historical_diagnostics.py``, control B): it replaces the
+    geometry-derived coupling angles with the given values while keeping the
+    same adjacent-pair coupling graph. It does not change ``coupling_angle`` or
+    the default construction and defaults to ``None`` (no effect).
     """
     if not 0.0 <= retention <= 1.0:
         raise ValueError("retention must lie in [0, 1]")
     event_count = len(world.coordinates)
     if event_count < 2:
         raise ValueError("a historical process needs at least two relational events")
-    flip_operator = np.array([[0, 1], [1, 0]], dtype=complex)
+    step_indices = list(range(event_count - 1))
+    if interval_permutation is not None and sorted(interval_permutation) != step_indices:
+        raise ValueError("interval_permutation must be a permutation of the coupling step indices")
+    if schedule is not None and sorted(schedule) != step_indices:
+        raise ValueError("schedule must be a permutation of the coupling step indices")
+    if angle_override is not None and len(angle_override) != len(step_indices):
+        raise ValueError("angle_override must supply one angle per coupling step")
+    execution_order = list(schedule) if schedule is not None else step_indices
+    flip_operator = _PAULI_X if intervention_operator is None else np.asarray(intervention_operator, dtype=complex)
+    if control_label is None:
+        if force_zero_coupling:
+            control_label = ZERO_COUPLING
+        elif interval_permutation is not None:
+            control_label = SHUFFLED_GEOMETRY
+        elif schedule is not None:
+            control_label = RANDOMIZED_ORDER
+        else:
+            control_label = FIXED_ORDER_CONTROL
 
     def _maybe_flip(state: np.ndarray, index: int) -> np.ndarray:
         if index not in bit_flips:
@@ -125,12 +179,17 @@ def build_geometry_coupled_history(
     rho = density_matrix(state_vector)
     rho = _maybe_flip(rho, 0)
     loss_probability = MAX_INFORMATION_LOSS_PROBABILITY * (1.0 - retention)
-    angles: list[float] = []
-    for first in range(event_count - 1):
-        second = first + 1
-        interval = float(world.invariant_intervals[first, second])
-        theta = coupling_angle(interval, length_scale)
-        angles.append(theta)
+    raw_intervals = [float(world.invariant_intervals[step, step + 1]) for step in step_indices]
+    if interval_permutation is not None:
+        raw_intervals = [raw_intervals[interval_permutation[step]] for step in step_indices]
+    angles: list[float] = [0.0] * len(step_indices)
+    for step in execution_order:
+        first, second = step, step + 1
+        if angle_override is not None:
+            theta = float(angle_override[step])
+        else:
+            theta = 0.0 if force_zero_coupling else coupling_angle(raw_intervals[step], length_scale)
+        angles[step] = theta
         unitary = _embed_adjacent_pair(_partial_swap(theta), first, event_count)
         rho = unitary @ rho @ unitary.conj().T
         rho = _apply_local_depolarizing(rho, first, event_count, loss_probability)
@@ -138,7 +197,17 @@ def build_geometry_coupled_history(
         rho = _maybe_flip(rho, second)
     labels = tuple(f"event_{index}" for index in range(event_count))
     system = QuantumSystem.from_density_matrix(rho, (2,) * event_count, labels=labels)
-    return HistoricalProcessResult(system, COUPLING_MECHANISM, tuple(angles), retention, event_count, length_scale)
+    return HistoricalProcessResult(
+        system,
+        COUPLING_MECHANISM,
+        tuple(angles),
+        retention,
+        event_count,
+        length_scale,
+        control_label,
+        tuple(execution_order),
+        tuple(interval_permutation) if interval_permutation is not None else (),
+    )
 
 
 def _trace_distance(first: np.ndarray, second: np.ndarray) -> float:
@@ -148,15 +217,14 @@ def _trace_distance(first: np.ndarray, second: np.ndarray) -> float:
 
 @dataclass(frozen=True)
 class HistoricalCausalResponseReport:
-    """Operational C_{i,j,a}: replay the SAME geometry-coupled process with an
-    initial bit-flip intervention at event i and compare event j's final marginal
-    to the unperturbed baseline. Unlike a post-hoc intervention on the frozen
-    final state, this respects no-signaling and can show genuine propagation
-    through the geometry-coupled dynamics.
+    """Operational C_{i,j,a}: replay the SAME process with an intervention at
+    event i and compare event j's final marginal to the unperturbed baseline.
+    Unlike a post-hoc intervention on the frozen final state, this respects
+    no-signaling and can show genuine propagation through the dynamics.
     """
 
     tensor: np.ndarray
-    intervention_family: str = "initial_bit_flip"
+    intervention_family: str = "single_qubit_pauli"
     number_of_interventions: int = 1
     approximation_scope: str = "finite single-intervention replay of the fixed-order geometry-coupled process"
 
@@ -165,16 +233,35 @@ def historical_intervention_response(
     world: GroundTruthWorld,
     retention: float = 1.0,
     length_scale: float = COUPLING_LENGTH_SCALE,
+    intervention_operator: np.ndarray | None = None,
+    intervention_label: str = "X",
+    force_zero_coupling: bool = False,
+    interval_permutation: tuple[int, ...] | None = None,
+    schedule: tuple[int, ...] | None = None,
 ) -> HistoricalCausalResponseReport:
-    baseline = build_geometry_coupled_history(world, retention, length_scale)
+    """Replay-based causal probe; ``intervention_operator`` defaults to Pauli-X.
+
+    Accepts the same experimental-integrity controls as
+    ``build_geometry_coupled_history`` so every control variant (COUPLED,
+    ZERO_COUPLING, SHUFFLED_GEOMETRY, RANDOMIZED_ORDER) gets a causal observable
+    built the same way.
+    """
+    common = dict(
+        retention=retention,
+        length_scale=length_scale,
+        force_zero_coupling=force_zero_coupling,
+        interval_permutation=interval_permutation,
+        schedule=schedule,
+    )
+    baseline = build_geometry_coupled_history(world, **common)
     event_count = baseline.event_count
     baseline_marginals = [baseline.system.reduced_state((target,)) for target in range(event_count)]
     tensor = np.zeros((event_count, event_count), dtype=float)
     for source in range(event_count):
-        perturbed = build_geometry_coupled_history(world, retention, length_scale, bit_flips=frozenset({source}))
+        perturbed = build_geometry_coupled_history(world, bit_flips=frozenset({source}), intervention_operator=intervention_operator, **common)
         for target in range(event_count):
             if target == source:
                 continue
             response = perturbed.system.reduced_state((target,))
             tensor[source, target] = _trace_distance(response, baseline_marginals[target])
-    return HistoricalCausalResponseReport(tensor)
+    return HistoricalCausalResponseReport(tensor, intervention_family=intervention_label)
