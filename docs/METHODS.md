@@ -20,6 +20,10 @@ The static causal estimate samples a finite Pauli intervention family and is exp
 
 Minkowski and conformal metrics are represented by metric functions with analytic first and second derivatives. Christoffel symbols, Riemann, Ricci, scalar curvature, and Einstein tensors are calculated by tensor contractions. Covariant divergence uses the mixed tensor, finite central differences for its derivative, and explicit connection terms. The Bianchi residual is independently reported. The conformal example is a controlled curved metric, not a claim about a physical source solution.
 
+## Frozen baseline reconstruction
+
+The reconstruction benchmark generates a diagonal quantum Markov state and a separate causal chain without reading the ground-truth coordinates. The optimizer receives only the mutual-information dissimilarity matrix and causal relation matrix. Ground-truth coordinates are used only after fitting for held-out loss, causal precision/recall, and coordinate error. The current benchmark fits event coordinates with a fixed Minkowski metric; it does not yet optimize metric components. `Q=0` and `Delta_munu=0` are enforced by configuration and runtime gates before the experiment starts.
+
 ## Reversibility and fixed points
 
 Kraus operators define fixed-order quantum channels. Reversible unitary and depolarizing channels are compared by forward/reverse fidelity and round-trip relative entropy. Fixed-point experiments distinguish convergence from periodic or unresolved processes. No fixed point is classified as a causal loop.

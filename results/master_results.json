@@ -35,6 +35,20 @@
     "value": 7.005125646220023e-13
   },
   {
+    "experiment_id": "EXP-GR-001",
+    "model_id": "BASELINE_HIDDEN_GEOMETRY",
+    "seed": 1234,
+    "metric": "test_loss",
+    "value": 3.925882351794105
+  },
+  {
+    "experiment_id": "EXP-GR-001",
+    "model_id": "BASELINE_HIDDEN_GEOMETRY",
+    "seed": 1234,
+    "metric": "coordinate_relative_error",
+    "value": 0.36759670338446393
+  },
+  {
     "experiment_id": "EXP-R-001",
     "model_id": "REVERSIBLE_UNITARY",
     "seed": 1234,
