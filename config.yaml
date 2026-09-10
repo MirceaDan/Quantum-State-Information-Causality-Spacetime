@@ -12,7 +12,5 @@ numerics:
   tolerance: 1.0e-10
   optimizer: "not enabled in phase 1"
 model:
-  Q: 0
-  Delta_munu: 0
   speculative_Q_enabled: false
   speculative_Delta_enabled: false
