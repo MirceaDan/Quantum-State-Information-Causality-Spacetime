@@ -1,0 +1,96 @@
+{
+  "milestone": "M4",
+  "classification": "IMPLEMENTED_AND_VALIDATED",
+  "claims_new_physics": false,
+  "claims_emergent_spacetime": false,
+  "claims_time_travel": false,
+  "q_norm": 0.0,
+  "delta_norm": 0.0,
+  "equivariance": {
+    "state": {
+      "max_error": 5.887846720064157e-17,
+      "mean_error": 4.550677200197836e-17,
+      "passed": true
+    },
+    "pairwise": {
+      "max_error": 2.7547408798511697e-15,
+      "mean_error": 1.855286757557195e-15,
+      "passed": true
+    },
+    "multipartite": {
+      "max_error": 4.593547764386585e-15,
+      "mean_error": 2.4092237175162476e-15,
+      "passed": true
+    },
+    "intervention": {
+      "max_error": 1.1449174941446927e-16,
+      "mean_error": 8.754000274884172e-17,
+      "passed": true
+    },
+    "memory": {
+      "max_error": 4.163336342344337e-17,
+      "mean_error": 1.61907524424502e-17,
+      "passed": true
+    },
+    "globals": {
+      "max_error": 5.551115123125783e-16,
+      "mean_error": 1.8970877723270235e-16,
+      "passed": true
+    },
+    "overall_pass": true,
+    "overall_max_error": 4.593547764386585e-15,
+    "overall_mean_error": 6.228592917456025e-16,
+    "num_permutations": 24
+  },
+  "memory": {
+    "process_memory_score": 0.10163910360364971,
+    "definition": "mean finite-replay intervention response R(X->Y); NOT a claim of a rigorous non-Markovianity measure"
+  },
+  "negative_control": {
+    "pass_expected_failure": true,
+    "num_permutations_tested": 23,
+    "max_error_observed": 0.8755165645983026
+  },
+  "scaling": [
+    {
+      "event_count": 3,
+      "hilbert_dimension": 8,
+      "num_permutations_tested": 6,
+      "max_equivariance_error": 6.661338147750939e-16,
+      "mean_equivariance_error": 1.2220608310780568e-16,
+      "process_memory_score": 0.15388363221637688,
+      "runtime_seconds": 0.060149400029331446
+    },
+    {
+      "event_count": 4,
+      "hilbert_dimension": 16,
+      "num_permutations_tested": 24,
+      "max_equivariance_error": 4.593547764386585e-15,
+      "mean_equivariance_error": 6.228592917456025e-16,
+      "process_memory_score": 0.10163910360364971,
+      "runtime_seconds": 0.4784042000537738
+    },
+    {
+      "event_count": 5,
+      "hilbert_dimension": 32,
+      "num_permutations_tested": 120,
+      "max_equivariance_error": 5.051514762044462e-15,
+      "mean_equivariance_error": 6.87135005022051e-16,
+      "process_memory_score": 0.08825860403254575,
+      "runtime_seconds": 6.403473400045186
+    }
+  ],
+  "reproducibility": {
+    "pass": true,
+    "seed": 1234,
+    "event_count": 4,
+    "permutation_seed": 1234,
+    "num_permutations": 24
+  },
+  "gate": {
+    "M4_EQUIVARIANCE_PASS": true,
+    "M4_NEGATIVE_CONTROL_PASS": true,
+    "M4_REPRODUCIBILITY_PASS": true,
+    "EXISTING_TEST_SUITE_PASS": true
+  }
+}

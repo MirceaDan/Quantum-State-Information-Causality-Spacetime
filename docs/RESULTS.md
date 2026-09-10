@@ -63,6 +63,35 @@ COUPLED is *worse* on average than `ZERO_COUPLING`: with no coupling at all, mut
 
 **Retention curve as control only (section 8):** `F_geom(eta)` for COUPLED is non-monotonic (0, 0, 0.167, 0.167, 0, 0.333) and the ZERO_COUPLING control is flat at 0 for every eta -- COUPLED does not cleanly dominate its own zero-coupling control across the sweep, consistent with the confound finding above.
 
+## Milestone 4 -- Permutation-Equivariant Quantum Process Memory
+
+Machine-readable output: `results/historical/m4_permutation_equivariant_process_memory_results.json` (from `run_permutation_equivariant_process_memory.py --existing-suite-passed`).
+
+**Scientific gate (section 19 of the M4 spec):**
+
+| Gate condition | Result |
+|---|---|
+| `M4_EQUIVARIANCE_PASS` | **PASS** (overall max error 4.6e-15 across all N=4 permutations, state/pairwise/multipartite/intervention/memory/global-scalar checks) |
+| `M4_NEGATIVE_CONTROL_PASS` | **PASS** (the deliberately broken index-parity model fails equivariance for every non-identity permutation tested, max error up to 0.88) |
+| `M4_REPRODUCIBILITY_PASS` | **PASS** (no RNG anywhere in the simulator; identical inputs give bit-identical output) |
+| `EXISTING_TEST_SUITE_PASS` | **PASS** (125 tests: 124 passed, 1 expected `xfail` for the still-open Reverse-Theseus confound, 0 unexpected failures) |
+
+All four gate conditions pass -> **`IMPLEMENTED_AND_VALIDATED`** for the M4 permutation-equivariant process-memory substrate specifically (state, pairwise-information, multipartite-information, intervention-response, and process-memory-score equivariance; NOT a claim about geometry reconstruction, which this milestone does not attempt).
+
+**Scaling (N=3,4,5; exhaustive permutation enumeration):**
+
+| N | Hilbert dim | permutations tested | max equivariance error | runtime |
+|---|---|---|---|---|
+| 3 | 8 | 6 | 6.7e-16 | 0.06s |
+| 4 | 16 | 24 | 4.6e-15 | 0.48s |
+| 5 | 32 | 120 | 5.1e-15 | 6.4s |
+
+Error does not grow with N in this range; runtime grows roughly with `N! x 4^N` from the exhaustive-permutation x dense-simulation combination, consistent with the known `4^N` scaling limitation already documented for the Reverse-Theseus phase.
+
+**Process-memory score** (mean multi-step intervention response) for the N=4 sample topology: a nonzero value, confirming information from an earlier declared relation step is still detectable in a later marginal after passing through the whole schedule -- a literal, narrowly-defined notion of finite memory, not a general non-Markovianity claim.
+
+No geometry, Lorentzian interval, conformal factor, GR, or CTC content is present anywhere in M4. `Q = 0` and `Delta_munu = 0` throughout.
+
 ## Root-cause analysis of the order/label confound (diagnosis only, no repair attempted)
 
 Machine-readable output: `results/historical/root_cause_analysis_results.json` (from `run_root_cause_analysis.py`). **Root-cause classification: `MULTIPLE_CONFUNDS`.** Full mechanism and evidence are in docs/AUDIT.md; summary:
