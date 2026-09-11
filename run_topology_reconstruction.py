@@ -22,7 +22,13 @@ sys.path.insert(0, str(ROOT / "src"))
 from relational_dynamics.causal_topology import is_isomorphic, relabel_topology, valid_topological_node_orders
 from relational_dynamics.topology_generation import branch_topology, chain_topology, cyclic_topology, generate_ensemble, merge_topology
 from relational_dynamics.topology_identifiability import run_identifiability_test
-from relational_dynamics.topology_observables import ProcessParameters, build_observable_bundle
+from relational_dynamics.topology_observables import (
+    ProcessParameters,
+    build_observable_bundle,
+    build_observable_bundle_from_instance,
+    create_physical_process_instance,
+    relabel_physical_process,
+)
 from relational_dynamics.topology_reconstruction import (
     ALL_OBSERVABLES,
     CAUSAL_ONLY,
@@ -108,11 +114,13 @@ def run_label_invariance_check(mode: str) -> dict:
     for topology in MANDATORY:
         if len(topology.nodes) != 4:
             continue
-        relabeled = relabel_topology(topology, permutation)
-        query_original = build_query_bundle(topology, seed=TEST_SEEDS[0])
-        query_relabeled = build_query_bundle(relabeled, seed=TEST_SEEDS[0])
+        node_order = None if topology.topology_class == "CYCLIC_PROCESS" else valid_topological_node_orders(topology)[0]
+        instance = create_physical_process_instance(topology, TEST_SEEDS[0], node_order)
+        relabeled = relabel_physical_process(instance, permutation)
+        query_original = build_observable_bundle_from_instance(instance)
+        query_relabeled = build_observable_bundle_from_instance(relabeled)
         result_original = reconstruct_topology(query_original, ENSEMBLE, ground_truth=topology, mode=mode)
-        result_relabeled = reconstruct_topology(query_relabeled, ENSEMBLE, ground_truth=relabeled, mode=mode)
+        result_relabeled = reconstruct_topology(query_relabeled, ENSEMBLE, ground_truth=relabeled.topology, mode=mode)
         invariant = is_isomorphic(result_original.recovered_topology, result_relabeled.recovered_topology)
         outcomes.append({"topology_class": topology.topology_class, "invariant": invariant})
     passed = all(entry["invariant"] for entry in outcomes)

@@ -1,23 +1,32 @@
 import numpy as np
 import pytest
 
-from relational_dynamics.causal_topology import has_cycle, is_isomorphic, relabel_topology, valid_topological_node_orders
+from relational_dynamics.causal_topology import graph_recovery_metrics, has_cycle, is_isomorphic, relabel_topology, valid_topological_node_orders
 from relational_dynamics.topology_generation import branch_topology, chain_topology, cyclic_topology, generate_ensemble, merge_topology
 from relational_dynamics.topology_observables import (
+    PhysicalProcessInstance,
     ProcessParameters,
     build_m4_process_topology,
     build_observable_bundle,
     build_observable_bundle_broken,
+    build_observable_bundle_from_instance,
+    create_physical_process_instance,
     default_process_parameters,
+    audit_directionality,
+    relabel_physical_process,
+    same_process_relabeling_report,
     schedule_from_node_order,
 )
+from relational_dynamics.m5_validation import reconstruction_relabeling_report, schedule_robustness_report
 from relational_dynamics.topology_reconstruction import (
     ALL_OBSERVABLES,
+    CAUSAL_ONLY,
     RECOMMENDED_MODE,
     TEST_SEEDS,
     TRAIN_SEEDS,
     assert_no_seed_leakage,
     build_query_bundle,
+    build_reference_library,
     build_reference_bundles,
     classify_cycle_vs_dag,
     combined_distance,
@@ -45,6 +54,21 @@ def test_observable_generation_hidden_topology_never_exposes_topology_fields():
         assert not hasattr(bundle, forbidden_field)
 
 
+def test_directionality_audit_discloses_schedule_mediated_direction():
+    audit = audit_directionality()
+    assert audit.gate_is_symmetric
+    assert not audit.relation_direction_enters_gate
+    assert audit.direction_enters_schedule
+
+
+def test_graph_metrics_compare_topologies_up_to_isomorphism():
+    truth = chain_topology()
+    relabeled = relabel_topology(truth, (2, 0, 3, 1))
+    metrics = graph_recovery_metrics(relabeled, truth)
+    assert metrics.precision == metrics.recall == metrics.f1 == 1.0
+    assert metrics.graph_edit_distance == 0
+
+
 def test_schedule_robustness_across_valid_topological_orders():
     """Section 8/15: same topology, different VALID schedules -> compare observables."""
     branch = branch_topology()
@@ -57,6 +81,14 @@ def test_schedule_robustness_across_valid_topological_orders():
     assert all(distance < 5.0 for distance in distances)
 
 
+def test_schedule_robustness_uses_one_frozen_nuisance_realization():
+    topology = branch_topology()
+    instance = create_physical_process_instance(topology, 11, valid_topological_node_orders(topology)[0])
+    report = schedule_robustness_report(instance, SMALL_ENSEMBLE, CAUSAL_ONLY)
+    assert report.schedules_tested == len(valid_topological_node_orders(topology))
+    assert all(record["relation_schedule"] for record in report.per_schedule)
+
+
 def test_cyclic_topology_uses_a_single_documented_schedule():
     cyclic = cyclic_topology()
     with pytest.raises(ValueError):
@@ -65,38 +97,73 @@ def test_cyclic_topology_uses_a_single_documented_schedule():
     assert schedule == tuple(range(len(cyclic.directed_relations)))
 
 
-@pytest.mark.xfail(strict=True, reason="ALL_OBSERVABLES equal-weight combination is not reliably label-invariant with this small (4-topology) candidate ensemble; see docs/AUDIT.md Milestone 5")
+def test_same_physical_process_relabeling_is_observable_invariant_exhaustively():
+    topology = branch_topology()
+    instance = create_physical_process_instance(topology, 7, valid_topological_node_orders(topology)[0])
+    report = same_process_relabeling_report(instance)
+    assert report.permutations_tested == 24
+    assert report.passed
+    assert max(
+        report.state_max_error,
+        report.pairwise_max_error,
+        report.multipartite_max_error,
+        report.intervention_max_error,
+        report.memory_max_error,
+        report.global_scalar_max_error,
+    ) < 1e-8
+
+
 def test_label_permutation_reconstruction_invariance_ALL_OBSERVABLES():
-    """Section 14: THE central M5 integrity test, using the naive equal-weight ALL mode."""
-    scales, dag_refs, cyc_refs = _scales()
+    """Same frozen process under every relabeling, with no nuisance resampling."""
     ensemble = SMALL_ENSEMBLE
-    chain = chain_topology()
+    topology = branch_topology()
+    instance = create_physical_process_instance(topology, 7, valid_topological_node_orders(topology)[0])
+    report = reconstruction_relabeling_report(instance, ensemble, ALL_OBSERVABLES)
+    assert report.permutations_tested == 24
+    assert report.prediction_invariant
+    assert report.truth_correctness_invariant
+
+
+def test_physical_process_relabeling_moves_all_nuisance_parameters_without_resampling():
+    topology = branch_topology()
+    instance = create_physical_process_instance(topology, 7, valid_topological_node_orders(topology)[0])
     permutation = (2, 0, 3, 1)
-    relabeled_chain = relabel_topology(chain, permutation)
+    relabeled = relabel_physical_process(instance, permutation)
+    assert relabeled.seed == instance.seed
+    assert relabeled.retention == instance.retention
+    for node, value in instance.node_initial_state_angles.items():
+        assert relabeled.node_initial_state_angles[permutation[node]] == value
+        assert relabeled.node_noise_parameters[permutation[node]] == instance.node_noise_parameters[node]
+    for edge, value in instance.relation_strengths.items():
+        mapped_edge = (permutation[edge[0]], permutation[edge[1]])
+        assert relabeled.relation_strengths[mapped_edge] == value
 
-    query_original = build_query_bundle(chain, seed=TEST_SEEDS[0])
-    query_relabeled = build_query_bundle(relabeled_chain, seed=TEST_SEEDS[0])
 
-    result_original = reconstruct_topology(query_original, ensemble, ground_truth=chain, scales=scales)
-    result_relabeled = reconstruct_topology(query_relabeled, ensemble, ground_truth=relabeled_chain, scales=scales)
+def test_independent_parameter_resampling_is_not_label_invariance():
+    topology = branch_topology()
+    node_order = valid_topological_node_orders(topology)[0]
+    first = create_physical_process_instance(topology, 7, node_order)
+    second = create_physical_process_instance(topology, 8, node_order)
+    assert first.node_initial_state_angles != second.node_initial_state_angles
+    assert first.relation_strengths != second.relation_strengths
 
-    assert is_isomorphic(result_original.recovered_topology, result_relabeled.recovered_topology)
-    assert result_original.is_isomorphic_to_truth == result_relabeled.is_isomorphic_to_truth
 
-
-def test_label_permutation_invariance_check_correctly_reports_pass_and_fail():
-    """The invariance CHECK ITSELF must be able to detect both outcomes (like the M4
-    negative control): confirm it reports the known ALL_OBSERVABLES failure above, and
-    confirm it can also report a pass (e.g. two independent runs of the SAME unpermuted
-    query must trivially agree)."""
-    chain = chain_topology()
-    ensemble = SMALL_ENSEMBLE
-    scales, _, _ = _scales()
-    query_a = build_query_bundle(chain, seed=TEST_SEEDS[0])
-    query_b = build_query_bundle(chain, seed=TEST_SEEDS[0])
-    result_a = reconstruct_topology(query_a, ensemble, ground_truth=chain, scales=scales)
-    result_b = reconstruct_topology(query_b, ensemble, ground_truth=chain, scales=scales)
-    assert is_isomorphic(result_a.recovered_topology, result_b.recovered_topology)  # trivial pass case
+def test_same_process_relabeling_and_resampling_are_distinct_experiments():
+    topology = branch_topology()
+    node_order = valid_topological_node_orders(topology)[0]
+    frozen = create_physical_process_instance(topology, 7, node_order)
+    relabeled = relabel_physical_process(frozen, (2, 0, 3, 1))
+    resampled = create_physical_process_instance(topology, 8, node_order)
+    frozen_bundle = build_observable_bundle_from_instance(frozen)
+    relabeled_bundle = build_observable_bundle_from_instance(relabeled)
+    resampled_bundle = build_observable_bundle_from_instance(resampled)
+    permutation = (2, 0, 3, 1)
+    np.testing.assert_allclose(
+        relabeled_bundle.pairwise_information[np.ix_(permutation, permutation)],
+        frozen_bundle.pairwise_information,
+        atol=1e-8,
+    )
+    assert not np.allclose(resampled_bundle.pairwise_information, frozen_bundle.pairwise_information, atol=1e-8)
 
 
 def test_strength_robustness_ALL_OBSERVABLES_ablation_report():
@@ -203,6 +270,12 @@ def test_no_seed_leakage_guard():
         assert_no_seed_leakage(test_seeds=TRAIN_SEEDS, train_seeds=TRAIN_SEEDS)
 
 
+def test_reference_library_is_train_only_and_records_its_seed_pool():
+    library = build_reference_library(SMALL_ENSEMBLE, TRAIN_SEEDS)
+    assert library.train_seeds == TRAIN_SEEDS
+    assert not (set(library.train_seeds) & set(TEST_SEEDS))
+
+
 def test_reproducibility_of_reconstruction():
     scales, _, _ = _scales()
     chain = chain_topology()
@@ -213,6 +286,15 @@ def test_reproducibility_of_reconstruction():
     result_b = reconstruct_topology(query_b, ensemble, ground_truth=chain, scales=scales)
     assert result_a.recovered_distance == result_b.recovered_distance
     assert result_a.recovered_topology.directed_relations == result_b.recovered_topology.directed_relations
+
+
+def test_candidate_order_cannot_change_reconstruction_result():
+    chain = chain_topology()
+    query = build_query_bundle(chain, seed=TEST_SEEDS[0])
+    forward = reconstruct_topology(query, SMALL_ENSEMBLE, ground_truth=chain)
+    backward = reconstruct_topology(query, list(reversed(SMALL_ENSEMBLE)), ground_truth=chain)
+    assert is_isomorphic(forward.recovered_topology, backward.recovered_topology)
+    assert forward.recovered_distance == backward.recovered_distance
 
 
 def test_ensemble_generation_includes_mandatory_topologies_and_is_deduplicated():
