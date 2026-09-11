@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 
-from .causal_topology import CausalTopology, is_isomorphic
+from .causal_topology import CausalTopology, canonical_topology_key, is_isomorphic
 from .topology_observables import ProcessParameters, build_observable_bundle
 from .topology_reconstruction import ALL_OBSERVABLES, _reference_node_order, isomorphism_aware_distance
 
@@ -34,6 +34,8 @@ def _random_parameters(topology: CausalTopology, rng: np.random.Generator) -> Pr
 class IdentifiabilityReport:
     topology_a_class: str
     topology_b_class: str
+    topology_a_key: tuple[tuple[int, int], ...]
+    topology_b_key: tuple[tuple[int, int], ...]
     best_distance: float
     tolerance: float
     trials: int
@@ -68,4 +70,14 @@ def run_identifiability_test(
         bundle_b = build_observable_bundle(topology_b, params_b, node_order_b)
         best_distance = min(best_distance, isomorphism_aware_distance(bundle_a, bundle_b, mode))
     classification = OBSERVABLY_INDISTINGUISHABLE if best_distance <= tolerance else OBSERVABLY_DISTINCT
-    return IdentifiabilityReport(topology_a.topology_class, topology_b.topology_class, best_distance, tolerance, trials, mode, classification)
+    return IdentifiabilityReport(
+        topology_a.topology_class,
+        topology_b.topology_class,
+        canonical_topology_key(topology_a),
+        canonical_topology_key(topology_b),
+        best_distance,
+        tolerance,
+        trials,
+        mode,
+        classification,
+    )

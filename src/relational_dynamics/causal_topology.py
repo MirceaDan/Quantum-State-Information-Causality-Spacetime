@@ -121,3 +121,29 @@ def valid_topological_node_orders(topology: CausalTopology) -> list[tuple[int, .
         if all(position[source] < position[target] for source, target in topology.directed_relations):
             valid_orders.append(permutation)
     return valid_orders
+
+
+@dataclass(frozen=True)
+class GraphRecoveryMetrics:
+    precision: float
+    recall: float
+    f1: float
+    graph_edit_distance: int
+
+
+def graph_recovery_metrics(predicted: CausalTopology, truth: CausalTopology) -> GraphRecoveryMetrics:
+    """Best edge overlap over all label alignments; edit distance is edge symmetric difference."""
+    truth_edges = set(truth.directed_relations)
+    best = GraphRecoveryMetrics(0.0, 0.0, 0.0, len(predicted.directed_relations) + len(truth_edges))
+    for permutation in itertools.permutations(truth.nodes):
+        mapping = dict(zip(predicted.nodes, permutation))
+        predicted_edges = {(mapping[source], mapping[target]) for source, target in predicted.directed_relations}
+        true_positive = len(predicted_edges & truth_edges)
+        precision = true_positive / len(predicted_edges) if predicted_edges else (1.0 if not truth_edges else 0.0)
+        recall = true_positive / len(truth_edges) if truth_edges else (1.0 if not predicted_edges else 0.0)
+        f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+        edit_distance = len(predicted_edges ^ truth_edges)
+        candidate = GraphRecoveryMetrics(precision, recall, f1, edit_distance)
+        if (candidate.graph_edit_distance, -candidate.f1) < (best.graph_edit_distance, -best.f1):
+            best = candidate
+    return best

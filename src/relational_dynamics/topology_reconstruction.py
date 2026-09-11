@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import itertools
 import numpy as np
 
-from .causal_topology import CausalTopology, has_cycle, is_isomorphic, valid_topological_node_orders
+from .causal_topology import CausalTopology, canonical_topology_key, has_cycle, is_isomorphic, valid_topological_node_orders
 from .topology_observables import TopologyObservableBundle, build_observable_bundle, default_process_parameters
 
 MI_ONLY = "MI_ONLY"
@@ -130,6 +130,10 @@ def _permute_bundle(bundle: TopologyObservableBundle, permutation: tuple[int, ..
     return TopologyObservableBundle(mi, multi, causal, bundle.memory_score, bundle.node_count)
 
 
+def _bundle_relabelings(bundle: TopologyObservableBundle) -> tuple[TopologyObservableBundle, ...]:
+    return tuple(_permute_bundle(bundle, permutation) for permutation in itertools.permutations(range(bundle.node_count)))
+
+
 def isomorphism_aware_distance(
     query_bundle: TopologyObservableBundle,
     candidate_bundle: TopologyObservableBundle,
@@ -141,8 +145,7 @@ def isomorphism_aware_distance(
     candidate (graph-isomorphism-aware comparison), never a raw fixed-label distance.
     Feasible because M5 is restricted to small N (<=5-6, exhaustive permutations)."""
     best = float("inf")
-    for permutation in itertools.permutations(range(candidate_bundle.node_count)):
-        permuted = _permute_bundle(candidate_bundle, permutation)
+    for permuted in _bundle_relabelings(candidate_bundle):
         best = min(best, combined_distance(query_bundle, permuted, mode, scales))
     return best
 
@@ -159,6 +162,28 @@ def _reference_node_order(topology: CausalTopology) -> tuple[int, ...] | None:
 def build_reference_bundles(topology: CausalTopology, seeds: tuple[int, ...] = TRAIN_SEEDS) -> list[TopologyObservableBundle]:
     node_order = _reference_node_order(topology)
     return [build_observable_bundle(topology, default_process_parameters(topology, seed=seed), node_order) for seed in seeds]
+
+
+@dataclass(frozen=True)
+class ReferenceLibrary:
+    candidate_topologies: tuple[CausalTopology, ...]
+    bundles_by_key: dict[str, tuple[TopologyObservableBundle, ...]]
+    relabelings_by_key: dict[str, tuple[tuple[TopologyObservableBundle, ...], ...]]
+    scales: ComponentScales
+    train_seeds: tuple[int, ...]
+
+
+def build_reference_library(candidate_topologies: list[CausalTopology], train_seeds: tuple[int, ...] = TRAIN_SEEDS) -> ReferenceLibrary:
+    assert_no_seed_leakage(test_seeds=TEST_SEEDS, train_seeds=train_seeds)
+    ordered = tuple(sorted(candidate_topologies, key=canonical_topology_key))
+    bundles_by_key = {
+        str(canonical_topology_key(topology)): tuple(build_reference_bundles(topology, train_seeds)) for topology in ordered
+    }
+    relabelings_by_key = {
+        key: tuple(_bundle_relabelings(bundle) for bundle in bundles) for key, bundles in bundles_by_key.items()
+    }
+    all_bundles = [bundle for bundles in bundles_by_key.values() for bundle in bundles]
+    return ReferenceLibrary(ordered, bundles_by_key, relabelings_by_key, compute_component_scales(all_bundles), train_seeds)
 
 
 def build_query_bundle(topology: CausalTopology, seed: int = TEST_SEEDS[0], node_order: tuple[int, ...] | None = "auto") -> TopologyObservableBundle:
@@ -204,6 +229,8 @@ class ReconstructionResult:
     recovered_distance: float
     all_candidate_distances: dict[str, float]
     is_isomorphic_to_truth: bool
+    ambiguous: bool = False
+    tied_canonical_keys: tuple[str, ...] = ()
 
 
 def reconstruct_topology(
@@ -215,18 +242,42 @@ def reconstruct_topology(
     candidate_seeds: tuple[int, ...] = TRAIN_SEEDS,
 ) -> ReconstructionResult:
     """Deterministic exhaustive candidate matching (section 11); no ML."""
-    best_topology = None
-    best_distance = float("inf")
+    assert_no_seed_leakage(test_seeds=TEST_SEEDS, train_seeds=candidate_seeds)
     all_distances: dict[str, float] = {}
-    for candidate in candidate_topologies:
+    candidate_by_key: dict[str, CausalTopology] = {}
+    for candidate in sorted(candidate_topologies, key=canonical_topology_key):
         reference_bundles = build_reference_bundles(candidate, candidate_seeds)
         candidate_distance = float(np.mean([isomorphism_aware_distance(query_bundle, reference, mode, scales) for reference in reference_bundles]))
-        all_distances[str(candidate.directed_relations)] = candidate_distance
-        if candidate_distance < best_distance:
-            best_distance = candidate_distance
-            best_topology = candidate
+        key = str(canonical_topology_key(candidate))
+        all_distances[key] = candidate_distance
+        candidate_by_key[key] = candidate
+    best_distance = min(all_distances.values())
+    tied_keys = tuple(sorted(key for key, distance in all_distances.items() if np.isclose(distance, best_distance, atol=1e-12, rtol=0.0)))
+    best_topology = candidate_by_key[tied_keys[0]]
     isomorphic = is_isomorphic(best_topology, ground_truth) if ground_truth is not None else False
-    return ReconstructionResult(best_topology, best_distance, all_distances, isomorphic)
+    return ReconstructionResult(best_topology, best_distance, all_distances, isomorphic, len(tied_keys) > 1, tied_keys)
+
+
+def reconstruct_with_library(
+    query_bundle: TopologyObservableBundle,
+    library: ReferenceLibrary,
+    ground_truth: CausalTopology | None = None,
+    mode: str = ALL_OBSERVABLES,
+) -> ReconstructionResult:
+    """Same inverse rule as ``reconstruct_topology``, using frozen training-only references."""
+    all_distances: dict[str, float] = {}
+    candidate_by_key = {str(canonical_topology_key(topology)): topology for topology in library.candidate_topologies}
+    for key, reference_relabelings in library.relabelings_by_key.items():
+        per_reference = [
+            min(combined_distance(query_bundle, relabeling, mode, library.scales) for relabeling in relabelings)
+            for relabelings in reference_relabelings
+        ]
+        all_distances[key] = float(np.mean(per_reference))
+    best_distance = min(all_distances.values())
+    tied_keys = tuple(sorted(key for key, distance in all_distances.items() if np.isclose(distance, best_distance, atol=1e-12, rtol=0.0)))
+    recovered = candidate_by_key[tied_keys[0]]
+    isomorphic = is_isomorphic(recovered, ground_truth) if ground_truth is not None else False
+    return ReconstructionResult(recovered, best_distance, all_distances, isomorphic, len(tied_keys) > 1, tied_keys)
 
 
 # ---------------------------------------------------------------------------

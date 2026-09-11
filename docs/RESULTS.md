@@ -94,6 +94,24 @@ No geometry, Lorentzian interval, conformal factor, GR, or CTC content is presen
 
 ## Milestone 5 -- Hidden Causal Topology Recovery
 
+> **Superseded protocol notice (2026-09-11):** the original label-invariance result below compared a relabeled graph after nuisance parameters and schedule had been regenerated or left attached to numeric labels. It was not a same-physical-process relabeling test and its `M5_LABEL_INVARIANCE_PASS=FAIL` conclusion is invalid. The corrected clean-validation results are reported in the next section.
+
+### M5.1/M5.2 clean validation (final hardening)
+
+Machine-readable results: `results/historical/m5_clean_validation_results.json`. Scope: all 34 non-isomorphic N=4 directed topologies with 2--4 edges and all nodes participating; reference seeds 100--111; held-out seeds 1000--1009; strengths in `[0.35,0.75]`, local state angles in `[0,2*pi]`, local noise in `[0,0.1]`, and retention in `{1.0,0.9,0.75,0.5}`. Runtime: 4033.8 seconds.
+
+The corrected same-physical-process relabeling protocol **passes** for all tested topologies and exhaustive N=4 permutations. Maximum observable discrepancy is `4.88e-15`; reconstruction predictions are invariant up to graph isomorphism. The old label-invariance failure was therefore a protocol error (resampling/misattachment), not a property of M5.
+
+Final gates: process relabeling PASS; label invariance PASS; train/test leakage PASS; causal leakage PASS; identifiability audit execution PASS; existing suite PASS; **schedule robustness FAIL; nuisance robustness FAIL; topology recovery FAIL**. Classification: **`IMPLEMENTED_BUT_NOT_FULLY_VALIDATED`**.
+
+M5.1 operational cyclic-vs-DAG classification (`CAUSAL_ONLY`): accuracy `0.803`, FPR `0.150`, FNR `0.250`, confusion matrix TP=120, TN=153, FP=27, FN=40. Random-label control is identical (`0.803`), as required. Random schedule gives `0.765`; randomized strengths `0.785`; zero coupling gives `0.529` with FNR `1.0`, showing cyclic separation requires nontrivial dynamics.
+
+M5.2 exact recovery over the 34-class family: `MI_ONLY=0.053`, `MULTIPARTITE_ONLY=0.035`, `CAUSAL_ONLY=0.324`, `MEMORY_ONLY=0.056`, `CAUSAL_PLUS_MEMORY=0.191`, `ALL=0.156`. Causal response is the strongest component; the scalar memory diagnostic does not add useful recovery information and reduces accuracy when combined with causal response. Clean/control accuracies under the primary mode are `0.265` (clean), `0.118` (shuffled observables), and `0.029` (zero coupling).
+
+Schedule robustness fails: prediction-invariance rates are `0.357` for `CAUSAL_ONLY` and `0.286` for `CAUSAL_PLUS_MEMORY`. Independently resampled nuisance-parameter recovery is `0.179` overall; by retention it is `0.188` (1.0), `0.182` (0.9), `0.182` (0.75), and `0.165` (0.5). The primary limitation is not a sharp noise threshold but poor parameter/schedule robustness already in the ideal case.
+
+Finite-domain ambiguity audit: 529 of 561 non-isomorphic topology pairs are `OBSERVABLY_INDISTINGUISHABLE` within tolerance `0.05`; 32 are separated. This is not a theorem of global non-identifiability, but it shows the present finite observable family does not uniquely encode most tested topologies.
+
 Machine-readable output: `results/historical/m5_topology_reconstruction_results.json` (from `run_topology_reconstruction.py --existing-suite-passed`). Mandatory topologies: CHAIN, BRANCH, MERGE, CYCLIC_PROCESS (N=4); ensemble: 10 non-isomorphic topologies (deduplicated via `canonical_topology_key`).
 
 **Scientific gate:**
