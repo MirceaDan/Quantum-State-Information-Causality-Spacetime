@@ -139,6 +139,17 @@ Further work justified now: NO
 Repository worth preserving: YES
 ```
 
+What would have remained for research:
+M6 : Test inverse identifiability
+
+M7 : Topology → causal geometry
+
+M8 : Lorentzian geometry reconstruction
+
+M9 : Geometric dynamics / gravity
+
+M10 : Causal cycles / CTC-like structures
+
 The appropriate status for future reference is therefore:
 
 **PAUSED — exploratory computational study completed to the current validation boundary.**
