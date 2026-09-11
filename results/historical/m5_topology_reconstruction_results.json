@@ -1,0 +1,329 @@
+{
+  "milestone": "M5",
+  "classification": "IMPLEMENTED_BUT_NOT_FULLY_VALIDATED",
+  "claims_new_physics": false,
+  "claims_emergent_spacetime": false,
+  "claims_time_travel": false,
+  "claims_physical_ctc": false,
+  "q_norm": 0.0,
+  "delta_norm": 0.0,
+  "gate": {
+    "M4_EQUIVARIANCE_PASS": true,
+    "M5_LABEL_INVARIANCE_PASS": false,
+    "M5_NEGATIVE_CONTROL_PASS": true,
+    "M5_REPRODUCIBILITY_PASS": true,
+    "M5_NO_LEAKAGE_PASS": true,
+    "EXISTING_TEST_SUITE_PASS": true
+  },
+  "m51_cycle_vs_dag": {
+    "cycle_detection_accuracy": 1.0,
+    "cycle_false_positive_rate": 0.0,
+    "cycle_false_negative_rate": 0.0,
+    "per_case": [
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "CHAIN",
+        "seed": 7
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "CHAIN",
+        "seed": 8
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "CHAIN",
+        "seed": 9
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "BRANCH",
+        "seed": 7
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "BRANCH",
+        "seed": 8
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "BRANCH",
+        "seed": 9
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "MERGE",
+        "seed": 7
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "MERGE",
+        "seed": 8
+      },
+      {
+        "truth": "DAG",
+        "predicted": "DAG",
+        "topology_class": "MERGE",
+        "seed": 9
+      },
+      {
+        "truth": "CYCLIC",
+        "predicted": "CYCLIC",
+        "topology_class": "CYCLIC_PROCESS",
+        "seed": 7
+      },
+      {
+        "truth": "CYCLIC",
+        "predicted": "CYCLIC",
+        "topology_class": "CYCLIC_PROCESS",
+        "seed": 8
+      },
+      {
+        "truth": "CYCLIC",
+        "predicted": "CYCLIC",
+        "topology_class": "CYCLIC_PROCESS",
+        "seed": 9
+      }
+    ]
+  },
+  "m52_exact_recovery_ablation": {
+    "MI_ONLY": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.4786428477838869
+        },
+        "BRANCH": {
+          "recovered_class": "ENSEMBLE",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.5510227448174974
+        },
+        "MERGE": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.5749988802227948
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "ENSEMBLE",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.4976687040157401
+        }
+      },
+      "accuracy": 0.25
+    },
+    "MULTIPARTITE_ONLY": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.03627769581448053
+        },
+        "BRANCH": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.036834839559088325
+        },
+        "MERGE": {
+          "recovered_class": "ENSEMBLE",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.0051525714848447215
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 6.690973007132209e-16
+        }
+      },
+      "accuracy": 0.5
+    },
+    "CAUSAL_ONLY": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.06832742748305244
+        },
+        "BRANCH": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.07175193036253161
+        },
+        "MERGE": {
+          "recovered_class": "MERGE",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.07694210575832408
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.04887404285341784
+        }
+      },
+      "accuracy": 0.75
+    },
+    "MEMORY_ONLY": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.02086605690161722
+        },
+        "BRANCH": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.021058803507381745
+        },
+        "MERGE": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.02154408308554555
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.02035286963663831
+        }
+      },
+      "accuracy": 0.25
+    },
+    "CAUSAL_PLUS_MEMORY": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.047095821258973096
+        },
+        "BRANCH": {
+          "recovered_class": "BRANCH",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.04854270701572094
+        },
+        "MERGE": {
+          "recovered_class": "MERGE",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.05077983678757128
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.034613456245028075
+        }
+      },
+      "accuracy": 1.0
+    },
+    "ALL": {
+      "per_topology": {
+        "CHAIN": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.1623734261885795
+        },
+        "BRANCH": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.18500231207759307
+        },
+        "MERGE": {
+          "recovered_class": "CHAIN",
+          "is_isomorphic_to_truth": false,
+          "recovered_distance": 0.19286559629611869
+        },
+        "CYCLIC_PROCESS": {
+          "recovered_class": "CYCLIC_PROCESS",
+          "is_isomorphic_to_truth": true,
+          "recovered_distance": 0.14562844105482511
+        }
+      },
+      "accuracy": 0.5
+    }
+  },
+  "label_invariance_ALL_OBSERVABLES": {
+    "pass": false,
+    "per_topology": [
+      {
+        "topology_class": "CHAIN",
+        "invariant": false
+      },
+      {
+        "topology_class": "BRANCH",
+        "invariant": false
+      },
+      {
+        "topology_class": "MERGE",
+        "invariant": false
+      },
+      {
+        "topology_class": "CYCLIC_PROCESS",
+        "invariant": true
+      }
+    ]
+  },
+  "label_invariance_RECOMMENDED_MODE": {
+    "pass": false,
+    "per_topology": [
+      {
+        "topology_class": "CHAIN",
+        "invariant": true
+      },
+      {
+        "topology_class": "BRANCH",
+        "invariant": false
+      },
+      {
+        "topology_class": "MERGE",
+        "invariant": true
+      },
+      {
+        "topology_class": "CYCLIC_PROCESS",
+        "invariant": true
+      }
+    ]
+  },
+  "negative_controls": {
+    "clean_is_isomorphic": true,
+    "shuffled_is_isomorphic": false,
+    "topology_independent_is_isomorphic": false,
+    "shuffled_control_behaved_as_expected": true,
+    "topology_independent_control_behaved_as_expected": true
+  },
+  "identifiability_chain_vs_cyclic": {
+    "topology_a_class": "CHAIN",
+    "topology_b_class": "CYCLIC_PROCESS",
+    "best_distance": 0.0826245935686065,
+    "tolerance": 0.05,
+    "trials": 10,
+    "mode": "ALL",
+    "classification": "OBSERVABLY_DISTINCT",
+    "note": "OBSERVABLY_INDISTINGUISHABLE is relative to the explicitly tested bounded parameter family (strengths in [0.05, pi/4], retention in [0.5, 1.0], random local initial-state/noise parameters) and the stated tolerance ONLY; it is not a general inverse-identifiability theorem."
+  },
+  "recommended_mode": "CAUSAL_ONLY",
+  "train_seeds": [
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111
+  ],
+  "test_seeds": [
+    7,
+    8,
+    9
+  ],
+  "ensemble_size": 10
+}
